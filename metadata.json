@@ -1,0 +1,6 @@
+{
+  "name": "Casa Vieja POS",
+  "description": "Artisanal point of sale system for Casa Vieja restaurant with table management and cash-drawer logging.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

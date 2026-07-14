@@ -1,0 +1,496 @@
+import React, { useState } from 'react';
+import { Table, OrderItem, MenuItem } from '../types';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Trash2, 
+  Printer, 
+  Send, 
+  Save, 
+  CreditCard, 
+  Coins, 
+  CheckCircle,
+  HelpCircle,
+  Clock,
+  User,
+  PlusCircle,
+  X
+} from 'lucide-react';
+
+interface OrderSidebarProps {
+  activeTable: Table | null;
+  isTakeout: boolean;
+  takeoutOrder: OrderItem[];
+  takeoutNotes: string;
+  onUpdateTakeoutNotes: (notes: string) => void;
+  onUpdateTableNotes: (tableId: string, notes: string) => void;
+  onClearOrder: () => void;
+  onUpdateQuantity: (menuItemId: string, change: number) => void;
+  onComandaSent: () => void;
+  onSaveOrder: () => void;
+  onCheckoutOrder: (paymentMethod: 'Tarjeta' | 'Efectivo', total: number) => void;
+  menuItems: MenuItem[];
+  onAddToOrderDirect: (item: MenuItem, quantity: number, notes: string) => void;
+}
+
+export default function OrderSidebar({
+  activeTable,
+  isTakeout,
+  takeoutOrder,
+  takeoutNotes,
+  onUpdateTakeoutNotes,
+  onUpdateTableNotes,
+  onClearOrder,
+  onUpdateQuantity,
+  onComandaSent,
+  onSaveOrder,
+  onCheckoutOrder,
+  menuItems,
+  onAddToOrderDirect
+}: OrderSidebarProps) {
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'Tarjeta' | 'Efectivo'>('Tarjeta');
+  const [cashAmountPaid, setCashAmountPaid] = useState('');
+  const [showComandaAlert, setShowComandaAlert] = useState(false);
+  const [showSaveAlert, setShowSaveAlert] = useState(false);
+  const [showExtrasModal, setShowExtrasModal] = useState<OrderItem | null>(null);
+
+  // Active items list
+  const orderItems = isTakeout ? takeoutOrder : (activeTable?.currentOrder || []);
+  const currentNotes = isTakeout ? takeoutNotes : (activeTable?.orderNotes || '');
+
+  // Totals calculations
+  const subtotal = orderItems.reduce((sum, item) => sum + (item.menuItem.price * item.quantity), 0);
+  const iva = subtotal * 0.16;
+  const total = subtotal + iva;
+
+  // Handle Notes update
+  const handleNotesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    if (isTakeout) {
+      onUpdateTakeoutNotes(val);
+    } else if (activeTable) {
+      onUpdateTableNotes(activeTable.id, val);
+    }
+  };
+
+  const handleClear = () => {
+    if (window.confirm('¿Está seguro de que desea limpiar todos los elementos de la orden?')) {
+      onClearOrder();
+    }
+  };
+
+  const handleSendComanda = () => {
+    if (orderItems.length === 0) return;
+    onComandaSent();
+    setShowComandaAlert(true);
+    setTimeout(() => setShowComandaAlert(false), 2000);
+  };
+
+  const handleSave = () => {
+    onSaveOrder();
+    setShowSaveAlert(true);
+    setTimeout(() => setShowSaveAlert(false), 2000);
+  };
+
+  const handleOpenCheckout = () => {
+    if (orderItems.length === 0) return;
+    setShowCheckoutModal(true);
+    setCashAmountPaid('');
+  };
+
+  const handleConfirmCheckout = () => {
+    onCheckoutOrder(paymentMethod, total);
+    setShowCheckoutModal(false);
+  };
+
+  const handleOpenExtras = (item: OrderItem) => {
+    setShowExtrasModal(item);
+  };
+
+  const handleAddExtra = (extraName: string, extraPrice: number) => {
+    if (showExtrasModal) {
+      const extraItem: MenuItem = {
+        id: `extra_${Date.now()}`,
+        name: `Extra: ${extraName}`,
+        price: extraPrice,
+        description: `Adición para ${showExtrasModal.menuItem.name}`,
+        category: 'Especiales'
+      };
+      onAddToOrderDirect(extraItem, 1, `Acompaña a ${showExtrasModal.menuItem.name}`);
+      setShowExtrasModal(null);
+    }
+  };
+
+  // Cash change logic
+  const paidNum = parseFloat(cashAmountPaid) || 0;
+  const changeDue = Math.max(0, paidNum - total);
+
+  return (
+    <aside className="w-full lg:w-96 bg-surface-bright border-t lg:border-t-0 lg:border-l border-stone-border flex flex-col h-full shadow-lg relative z-20 shrink-0">
+      
+      {/* Bill Header */}
+      <div className="p-5 border-b border-stone-border bg-[#fdfcf0]">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <span className="inline-block px-3 py-1 rounded-full bg-secondary-container text-[#5f6732] text-[10px] font-bold tracking-wider mb-2 uppercase border border-secondary/20">
+              {isTakeout ? 'Orden para Llevar' : 'Orden Activa'}
+            </span>
+            <h2 className="font-serif text-2xl text-on-surface font-semibold flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">
+                {isTakeout ? 'takeout_dining' : 'table_restaurant'}
+              </span>
+              <span>{isTakeout ? 'Para Llevar' : `Mesa ${activeTable?.number || '?'}`}</span>
+            </h2>
+          </div>
+          <button 
+            onClick={handleClear}
+            disabled={orderItems.length === 0}
+            className="text-on-surface-variant hover:text-red-700 transition-colors p-1.5 hover:bg-stone-card rounded-lg disabled:opacity-45"
+            title="Borrar pedido"
+          >
+            <span className="material-symbols-outlined text-xl">delete_sweep</span>
+          </button>
+        </div>
+        
+        <div className="flex justify-between text-xs text-on-surface-variant font-sans mt-2 pt-2 border-t border-stone-border/30">
+          <p className="flex items-center gap-1">
+            <User className="w-3.5 h-3.5 text-secondary" />
+            <span>Mesero: {isTakeout ? 'Caja Principal' : (activeTable?.waiter || 'Juan P.')}</span>
+          </p>
+          <p className="flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5 text-primary" />
+            <span>{isTakeout ? 'Instantáneo' : `${activeTable?.minutes || 10} min`}</span>
+          </p>
+        </div>
+      </div>
+
+      {/* Bill Items List */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+        {orderItems.map((item, index) => (
+          <div 
+            key={`${item.menuItem.id}-${index}`} 
+            className="p-4 rounded-xl bg-[#ffffff] border border-stone-border flex flex-col gap-3 shadow-xs hover:border-stone-border-dark transition-colors"
+          >
+            <div className="flex justify-between items-start">
+              <div className="flex-1 pr-4">
+                <h4 className="font-sans text-sm font-bold text-on-surface">{item.menuItem.name}</h4>
+                {item.notes && (
+                  <p className="text-xs text-on-surface-variant italic font-sans mt-1 bg-stone-card px-2 py-0.5 rounded-md inline-block">
+                    {item.notes}
+                  </p>
+                )}
+                
+                {/* Modifiers / Extras Button */}
+                <button
+                  type="button"
+                  onClick={() => handleOpenExtras(item)}
+                  className="mt-2 text-[11px] font-semibold text-primary hover:text-primary-container flex items-center gap-1 transition-colors"
+                >
+                  <PlusCircle className="w-3 h-3" />
+                  <span>Ver extras / salsas</span>
+                </button>
+              </div>
+              <span className="font-sans font-semibold text-primary text-sm">${item.menuItem.price}</span>
+            </div>
+
+            {/* Quantity adjusters */}
+            <div className="flex items-center justify-between mt-1 pt-2 border-t border-stone-border/40">
+              <div className="flex items-center bg-stone-card rounded-lg p-0.5 border border-stone-border/50">
+                <button 
+                  onClick={() => onUpdateQuantity(item.menuItem.id, -1)}
+                  className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:bg-stone-border transition-colors"
+                >
+                  <span className="material-symbols-outlined text-xs">remove</span>
+                </button>
+                <span className="w-8 text-center font-sans font-bold text-xs text-on-surface">
+                  {item.quantity}
+                </span>
+                <button 
+                  onClick={() => onUpdateQuantity(item.menuItem.id, 1)}
+                  className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:bg-stone-border transition-colors"
+                >
+                  <span className="material-symbols-outlined text-xs">add</span>
+                </button>
+              </div>
+              <span className="font-sans font-bold text-sm text-on-surface">
+                ${(item.menuItem.price * item.quantity).toFixed(2)}
+              </span>
+            </div>
+          </div>
+        ))}
+
+        {orderItems.length === 0 && (
+          <div className="py-16 text-center text-on-surface-variant/55 font-sans space-y-3">
+            <span className="material-symbols-outlined text-5xl text-stone-border">restaurant_menu</span>
+            <p className="text-xs font-semibold">Orden vacía.</p>
+            <p className="text-[11px] px-6">Selecciona platillos en el catálogo de la izquierda para agregarlos a la comanda.</p>
+          </div>
+        )}
+
+        {/* Cook Comments */}
+        {orderItems.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-stone-border/60">
+            <label className="block text-[11px] font-bold text-on-surface mb-2 uppercase tracking-wider font-sans">
+              Comentarios para el cocinero
+            </label>
+            <textarea
+              value={currentNotes}
+              onChange={handleNotesChange}
+              placeholder="Ej. Término medio, sin cebolla, salsa aparte..."
+              className="w-full p-3 rounded-xl bg-stone-card border border-stone-border focus:border-primary focus:ring-0 text-xs font-sans text-on-surface-variant placeholder:text-stone-border-dark/30 h-20 resize-none transition-all"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Bill Totals & Actions Panel */}
+      <div className="p-5 bg-surface-container-low border-t border-stone-border">
+        {/* Alerts for visual feedback */}
+        <AnimatePresence>
+          {showComandaAlert && (
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              className="bg-secondary text-white text-xs font-sans font-bold py-2.5 px-3 rounded-lg text-center mb-3 flex items-center justify-center gap-1.5 shadow-sm"
+            >
+              <Send className="w-4 h-4 animate-bounce" />
+              <span>¡Comanda enviada a Cocina!</span>
+            </motion.div>
+          )}
+
+          {showSaveAlert && (
+            <motion.div 
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              className="bg-blue-600 text-white text-xs font-sans font-bold py-2.5 px-3 rounded-lg text-center mb-3 flex items-center justify-center gap-1.5 shadow-sm"
+            >
+              <Save className="w-4 h-4" />
+              <span>¡Cambios de la Orden guardados!</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <div className="space-y-2 mb-5">
+          <div className="flex justify-between text-xs text-on-surface-variant font-sans">
+            <span>Subtotal</span>
+            <span className="font-semibold">${subtotal.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-xs text-on-surface-variant font-sans">
+            <span>IVA (16%)</span>
+            <span className="font-semibold">${iva.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between pt-3 mt-2 border-t border-stone-border/60">
+            <span className="font-serif text-lg text-on-surface font-bold">Total</span>
+            <span className="font-serif text-2xl text-primary font-bold">
+              ${total.toFixed(2)}
+            </span>
+          </div>
+        </div>
+        
+        {/* Buttons layout */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <button 
+            onClick={() => {
+              if (orderItems.length > 0) {
+                alert('Imprimiendo pre-cuenta en caja...');
+              }
+            }}
+            disabled={orderItems.length === 0}
+            className="py-3 px-3 rounded-xl border border-stone-border/80 text-on-surface font-sans text-xs font-bold hover:bg-stone-card transition-colors flex items-center justify-center gap-1.5 disabled:opacity-45"
+          >
+            <Printer className="w-4 h-4 text-on-surface-variant" />
+            <span>Pre-cuenta</span>
+          </button>
+
+          <button 
+            onClick={handleSendComanda}
+            disabled={orderItems.length === 0}
+            className="py-3 px-3 rounded-xl bg-[#8d4b00] hover:bg-[#b15f00] text-white font-sans text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-45"
+          >
+            <Send className="w-4 h-4" />
+            <span>Comanda</span>
+          </button>
+
+          {!isTakeout && (
+            <button 
+              onClick={handleSave}
+              disabled={orderItems.length === 0}
+              className="col-span-2 py-3 px-3 rounded-xl border border-primary/40 hover:bg-primary-fixed text-primary font-sans text-xs font-bold transition-all flex items-center justify-center gap-1.5 disabled:opacity-45"
+            >
+              <Save className="w-4 h-4" />
+              <span>Guardar Orden</span>
+            </button>
+          )}
+
+          <button 
+            onClick={handleOpenCheckout}
+            disabled={orderItems.length === 0}
+            className="col-span-2 py-4 rounded-xl bg-secondary hover:bg-[#434b18] text-white font-sans text-sm font-bold transition-all shadow-md mt-1 flex items-center justify-center gap-2 disabled:opacity-45"
+          >
+            <CreditCard className="w-4 h-4" />
+            <span>Cobrar Orden</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Checkout Dialog Modal */}
+      <AnimatePresence>
+        {showCheckoutModal && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#fdfcf0] rounded-2xl max-w-sm w-full p-6 border border-stone-border shadow-xl space-y-6"
+            >
+              <div className="space-y-1">
+                <h3 className="text-2xl font-serif text-[#4a3f35] font-bold">Cobrar Cuenta</h3>
+                <p className="text-xs text-on-surface-variant font-sans">
+                  {isTakeout ? 'Para Llevar' : `Mesa ${activeTable?.number}`} • Selecciona método de pago.
+                </p>
+              </div>
+
+              <div className="bg-stone-card p-4 rounded-xl border border-stone-border/80 flex justify-between items-center">
+                <span className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant">Total a pagar</span>
+                <span className="font-serif text-2xl text-primary font-bold">${total.toFixed(2)}</span>
+              </div>
+
+              {/* Payment Method Tabs */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wider text-on-surface">Método de Pago</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('Tarjeta')}
+                    className={`p-3 rounded-xl border text-xs font-bold font-sans flex items-center justify-center gap-2 transition-all ${
+                      paymentMethod === 'Tarjeta' 
+                        ? 'border-primary bg-primary-fixed text-primary shadow-sm' 
+                        : 'border-stone-border hover:bg-stone-card text-on-surface-variant'
+                    }`}
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    <span>Tarjeta</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('Efectivo')}
+                    className={`p-3 rounded-xl border text-xs font-bold font-sans flex items-center justify-center gap-2 transition-all ${
+                      paymentMethod === 'Efectivo' 
+                        ? 'border-primary bg-primary-fixed text-primary shadow-sm' 
+                        : 'border-stone-border hover:bg-stone-card text-on-surface-variant'
+                    }`}
+                  >
+                    <Coins className="w-4 h-4" />
+                    <span>Efectivo</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* If Cash, display Change Calculator */}
+              {paymentMethod === 'Efectivo' && (
+                <div className="space-y-3 animate-fade-in">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-on-surface">Efectivo Recibido</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-on-surface-variant font-bold">$</span>
+                    <input
+                      type="number"
+                      value={cashAmountPaid}
+                      onChange={(e) => setCashAmountPaid(e.target.value)}
+                      placeholder="Monto pagado..."
+                      className="w-full pl-7 pr-3 py-3 rounded-xl bg-stone-card border border-stone-border focus:border-primary focus:ring-0 text-sm font-sans text-on-surface font-semibold"
+                    />
+                  </div>
+
+                  {paidNum > 0 && (
+                    <div className="flex justify-between items-center px-2 py-1 bg-secondary/10 border border-secondary/20 rounded-lg text-xs font-sans text-secondary">
+                      <span className="font-semibold">Cambio a entregar:</span>
+                      <span className="font-bold text-sm">${changeDue.toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Confirmation actions */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowCheckoutModal(false)}
+                  className="flex-1 py-3 border border-stone-border rounded-xl text-xs font-semibold font-sans uppercase tracking-wider hover:bg-stone-card transition-colors text-on-surface-variant"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleConfirmCheckout}
+                  disabled={paymentMethod === 'Efectivo' && paidNum < total}
+                  className="flex-1 py-3 bg-secondary hover:bg-[#434b18] text-white rounded-xl text-xs font-semibold font-sans uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-1.5 disabled:opacity-45"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  <span>Confirmar</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Extras Selection Popover */}
+      <AnimatePresence>
+        {showExtrasModal && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-[#fdfcf0] rounded-2xl max-w-sm w-full p-5 border border-stone-border shadow-xl space-y-4"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-serif text-lg font-bold text-on-surface">Ingredientes Extras</h3>
+                  <p className="text-xs text-on-surface-variant">Añadir adicionales para {showExtrasModal.menuItem.name}</p>
+                </div>
+                <button 
+                  onClick={() => setShowExtrasModal(null)}
+                  className="text-on-surface-variant hover:text-on-surface"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <button
+                  onClick={() => handleAddExtra('Queso Extra', 25)}
+                  className="w-full text-left p-3 rounded-xl border border-stone-border hover:bg-stone-card transition-colors text-xs font-sans flex justify-between items-center"
+                >
+                  <span className="font-semibold">+ Queso Artesanal</span>
+                  <span className="font-bold text-primary">+$25.00</span>
+                </button>
+                <button
+                  onClick={() => handleAddExtra('Huevo Adicional', 20)}
+                  className="w-full text-left p-3 rounded-xl border border-stone-border hover:bg-stone-card transition-colors text-xs font-sans flex justify-between items-center"
+                >
+                  <span className="font-semibold">+ Huevo Adicional</span>
+                  <span className="font-bold text-primary">+$20.00</span>
+                </button>
+                <button
+                  onClick={() => handleAddExtra('Pollo Deshebrado', 35)}
+                  className="w-full text-left p-3 rounded-xl border border-stone-border hover:bg-stone-card transition-colors text-xs font-sans flex justify-between items-center"
+                >
+                  <span className="font-semibold">+ Pollo Adicional</span>
+                  <span className="font-bold text-primary">+$35.00</span>
+                </button>
+                <button
+                  onClick={() => handleAddExtra('Aguacate', 30)}
+                  className="w-full text-left p-3 rounded-xl border border-stone-border hover:bg-stone-card transition-colors text-xs font-sans flex justify-between items-center"
+                >
+                  <span className="font-semibold">+ Aguacate Fresco</span>
+                  <span className="font-bold text-primary">+$30.00</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </aside>
+  );
+}
