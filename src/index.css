@@ -5,25 +5,25 @@
   --font-sans: "Work Sans", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  --color-primary: #8d4b00;
-  --color-primary-container: #b15f00;
+  --color-primary: #a66b27;
+  --color-primary-container: #d99a6c;
   --color-primary-fixed: #ffdcc3;
   --color-secondary: #5a632e;
   --color-secondary-container: #dce5a3;
   --color-tertiary: #585f40;
   
-  --color-parchment: #fbfaee;
-  --color-stone-card: #f7f3e9;
-  --color-stone-border: #e4e3d7;
+  --color-parchment: #fcf8f2;
+  --color-stone-card: #f0ebe1;
+  --color-stone-border: #e0dcd3;
   --color-stone-dark: #2d2a26;
   
-  --color-surface-dim: #dbdbcf;
-  --color-surface-bright: #fbfaee;
+  --color-surface-dim: #eae6d9;
+  --color-surface-bright: #fcf8f2;
   --color-surface-container-lowest: #ffffff;
   --color-surface-container-low: #f5f4e8;
   --color-surface-container: #efeee3;
-  --color-surface-container-high: #e9e9dd;
-  --color-surface-container-highest: #e4e3d7;
+  --color-surface-container-high: #eae6d9;
+  --color-surface-container-highest: #e0dcd3;
   
   --color-on-surface: #1b1c15;
   --color-on-surface-variant: #554336;

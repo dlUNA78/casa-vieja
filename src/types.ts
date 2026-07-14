@@ -14,6 +14,15 @@ export interface OrderItem {
   notes: string;
 }
 
+export interface TakeoutOrder {
+  id: string;
+  customerName: string;
+  status: 'pending' | 'ready';
+  currentOrder: OrderItem[];
+  orderNotes?: string;
+  address?: string;
+}
+
 export interface Table {
   id: string;
   number: number;

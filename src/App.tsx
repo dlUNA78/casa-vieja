@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MenuItem, Table, Transaction, OrderItem } from './types';
+import { MenuItem, Table, Transaction, OrderItem, TakeoutOrder } from './types';
 import { 
   INITIAL_MENU_ITEMS, 
   INITIAL_TABLES, 
@@ -23,7 +23,8 @@ import {
   HelpCircle,
   LogOut,
   Sparkles,
-  Award
+  Award,
+  ArrowLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -44,13 +45,21 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
   });
 
+  const [takeoutOrders, setTakeoutOrders] = useState<TakeoutOrder[]>(() => {
+    const saved = localStorage.getItem('cv_pos_takeout_orders');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [activeTab, setActiveTab] = useState<'Mesas' | 'Menú' | 'Historial' | 'Cartera' | 'Ajustes'>('Mesas');
   const [selectedTableId, setSelectedTableId] = useState<string | null>('table_12'); // defaults to Mesa 12 per screenshots
   const [isTakeout, setIsTakeout] = useState(false);
-  const [takeoutOrder, setTakeoutOrder] = useState<OrderItem[]>([]);
-  const [takeoutNotes, setTakeoutNotes] = useState('');
+  const [selectedTakeoutOrderId, setSelectedTakeoutOrderId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Pending add item when no active order exists
+  const [pendingAddOrderItem, setPendingAddOrderItem] = useState<{item: MenuItem, quantity: number, notes: string} | null>(null);
+  const [newTakeoutName, setNewTakeoutName] = useState('');
+
   // UI States
   const [showNotificationPopup, setShowNotificationPopup] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -74,19 +83,52 @@ export default function App() {
     localStorage.setItem('cv_pos_transactions', JSON.stringify(transactions));
   }, [transactions]);
 
-  // Derived Active Table
+  useEffect(() => {
+    localStorage.setItem('cv_pos_takeout_orders', JSON.stringify(takeoutOrders));
+  }, [takeoutOrders]);
+
+  // Derived Active Table and Takeout
   const activeTable = tables.find(t => t.id === selectedTableId) || null;
+  const activeTakeout = takeoutOrders.find(t => t.id === selectedTakeoutOrderId) || null;
 
   // Active orders modifier helper
   const handleAddToOrderDirect = (extraItem: MenuItem, quantity: number, notes: string) => {
     handleAddToOrder(extraItem, quantity, notes);
   };
 
+  const changeTab = (tab: 'Mesas' | 'Menú' | 'Historial' | 'Cartera' | 'Ajustes') => {
+    // Check if we are leaving the 'Menú' tab and we have a selected table
+    if (activeTab === 'Menú' && tab !== 'Menú') {
+      if (selectedTableId && !isTakeout) {
+        const currentTable = tables.find(t => t.id === selectedTableId);
+        if (currentTable && currentTable.currentOrder.length === 0) {
+          // Revert to available
+          setTables(prev => prev.map(t => {
+            if (t.id === selectedTableId) {
+              return { ...t, status: 'available', waiter: undefined, minutes: undefined };
+            }
+            return t;
+          }));
+        }
+      }
+    }
+    setActiveTab(tab);
+  };
+
   // State actions
   const handleSelectTable = (table: Table) => {
     setSelectedTableId(table.id);
     setIsTakeout(false);
-    setActiveTab('Menú');
+    setSelectedTakeoutOrderId(null);
+    changeTab('Menú');
+    setMobileMenuOpen(false);
+  };
+
+  const handleSelectTakeoutOrder = (orderId: string) => {
+    setSelectedTakeoutOrderId(orderId);
+    setIsTakeout(true);
+    setSelectedTableId(null);
+    changeTab('Menú');
     setMobileMenuOpen(false);
   };
 
@@ -101,12 +143,38 @@ export default function App() {
     addNotification(`Mesa ${tables.find(t => t.id === tableId)?.number} se encuentra limpia y disponible`);
   };
 
-  const handleStartTakeout = () => {
-    setIsTakeout(true);
+  const handleFreeTable = (tableId: string) => {
+    setTables(prev => prev.map(t => {
+      if (t.id === tableId) {
+        return { ...t, status: 'available', currentOrder: [], waiter: undefined, minutes: undefined };
+      }
+      return t;
+    }));
     setSelectedTableId(null);
-    setTakeoutOrder([]);
-    setTakeoutNotes('');
-    setActiveTab('Menú');
+    changeTab('Mesas');
+    addNotification(`Mesa ${tables.find(t => t.id === tableId)?.number} ha sido liberada`);
+  };
+
+  const handleFreeTakeout = (orderId: string) => {
+    setTakeoutOrders(prev => prev.filter(t => t.id !== orderId));
+    setSelectedTakeoutOrderId(null);
+    changeTab('Mesas');
+    addNotification(`Pedido para llevar ha sido cancelado`);
+  };
+
+  const handleStartTakeout = (customerName: string) => {
+    const newTakeout: TakeoutOrder = {
+      id: `takeout_${Date.now()}`,
+      customerName,
+      status: 'pending',
+      currentOrder: [],
+      orderNotes: ''
+    };
+    setTakeoutOrders(prev => [...prev, newTakeout]);
+    setIsTakeout(true);
+    setSelectedTakeoutOrderId(newTakeout.id);
+    setSelectedTableId(null);
+    changeTab('Menú');
   };
 
   const handleAssignTable = (tableId: string, waiter: string) => {
@@ -124,24 +192,31 @@ export default function App() {
     }));
     setSelectedTableId(tableId);
     setIsTakeout(false);
-    setActiveTab('Menú');
+    setSelectedTakeoutOrderId(null);
+    changeTab('Menú');
   };
 
   // Add Item to Order
   const handleAddToOrder = (item: MenuItem, quantity: number, notes: string) => {
-    if (isTakeout) {
-      setTakeoutOrder(prev => {
-        const exists = prev.find(o => o.menuItem.id === item.id && o.notes === notes);
-        if (exists) {
-          return prev.map(o => {
-            if (o.menuItem.id === item.id && o.notes === notes) {
-              return { ...o, quantity: o.quantity + quantity };
-            }
-            return o;
-          });
+    if (isTakeout && selectedTakeoutOrderId) {
+      setTakeoutOrders(prev => prev.map(t => {
+        if (t.id === selectedTakeoutOrderId) {
+          const order = [...t.currentOrder];
+          const exists = order.find(o => o.menuItem.id === item.id && o.notes === notes);
+          if (exists) {
+            const updated = order.map(o => {
+              if (o.menuItem.id === item.id && o.notes === notes) {
+                return { ...o, quantity: o.quantity + quantity };
+              }
+              return o;
+            });
+            return { ...t, currentOrder: updated };
+          } else {
+            return { ...t, currentOrder: [...order, { menuItem: item, quantity, notes }] };
+          }
         }
-        return [...prev, { menuItem: item, quantity, notes }];
-      });
+        return t;
+      }));
     } else if (selectedTableId) {
       setTables(prev => prev.map(t => {
         if (t.id === selectedTableId) {
@@ -161,21 +236,27 @@ export default function App() {
         }
         return t;
       }));
+    } else {
+      setPendingAddOrderItem({ item, quantity, notes });
     }
   };
 
   // Quantity updates on active ticket
   const handleUpdateQuantity = (menuItemId: string, change: number) => {
-    if (isTakeout) {
-      setTakeoutOrder(prev => {
-        return prev.map(o => {
-          if (o.menuItem.id === menuItemId) {
-            const newQty = o.quantity + change;
-            return newQty > 0 ? { ...o, quantity: newQty } : null;
-          }
-          return o;
-        }).filter(Boolean) as OrderItem[];
-      });
+    if (isTakeout && selectedTakeoutOrderId) {
+      setTakeoutOrders(prev => prev.map(t => {
+        if (t.id === selectedTakeoutOrderId) {
+          const updated = t.currentOrder.map(o => {
+            if (o.menuItem.id === menuItemId) {
+              const newQty = o.quantity + change;
+              return newQty > 0 ? { ...o, quantity: newQty } : null;
+            }
+            return o;
+          }).filter(Boolean) as OrderItem[];
+          return { ...t, currentOrder: updated };
+        }
+        return t;
+      }));
     } else if (selectedTableId) {
       setTables(prev => prev.map(t => {
         if (t.id === selectedTableId) {
@@ -195,9 +276,13 @@ export default function App() {
 
   // Clear entire active order
   const handleClearOrder = () => {
-    if (isTakeout) {
-      setTakeoutOrder([]);
-      setTakeoutNotes('');
+    if (isTakeout && selectedTakeoutOrderId) {
+      setTakeoutOrders(prev => prev.map(t => {
+        if (t.id === selectedTakeoutOrderId) {
+          return { ...t, currentOrder: [], orderNotes: '' };
+        }
+        return t;
+      }));
     } else if (selectedTableId) {
       setTables(prev => prev.map(t => {
         if (t.id === selectedTableId) {
@@ -210,7 +295,25 @@ export default function App() {
 
   // Cook notes
   const handleUpdateTakeoutNotes = (notes: string) => {
-    setTakeoutNotes(notes);
+    if (isTakeout && selectedTakeoutOrderId) {
+      setTakeoutOrders(prev => prev.map(t => {
+        if (t.id === selectedTakeoutOrderId) {
+          return { ...t, orderNotes: notes };
+        }
+        return t;
+      }));
+    }
+  };
+
+  const handleUpdateTakeoutAddress = (address: string) => {
+    if (isTakeout && selectedTakeoutOrderId) {
+      setTakeoutOrders(prev => prev.map(t => {
+        if (t.id === selectedTakeoutOrderId) {
+          return { ...t, address };
+        }
+        return t;
+      }));
+    }
   };
 
   const handleUpdateTableNotes = (tableId: string, notes: string) => {
@@ -225,13 +328,18 @@ export default function App() {
   const handleComandaSent = () => {
     addNotification(
       isTakeout 
-        ? 'Nueva comanda para llevar enviada a cocina.' 
+        ? `Nueva comanda para ${activeTakeout?.customerName || 'Llevar'} enviada a cocina.` 
         : `Comanda de Mesa ${activeTable?.number} enviada a cocina.`
     );
   };
 
   const handleSaveOrder = () => {
-    addNotification(`Orden de Mesa ${activeTable?.number} guardada.`);
+    if (isTakeout) {
+      addNotification(`Pedido de ${activeTakeout?.customerName} guardado.`);
+      changeTab('Mesas');
+    } else {
+      addNotification(`Orden de Mesa ${activeTable?.number} guardada.`);
+    }
   };
 
   // Complete Payment & checkout
@@ -250,7 +358,7 @@ export default function App() {
 
     const dateStr = now.toISOString().split('T')[0];
 
-    const originStr = isTakeout ? 'Para Llevar' : `Mesa ${activeTable?.number}`;
+    const originStr = isTakeout ? `Para Llevar (${activeTakeout?.customerName || ''})` : `Mesa ${activeTable?.number}`;
 
     const newTx: Transaction = {
       id: `tx_${nextFolioNum}`,
@@ -273,15 +381,15 @@ export default function App() {
         return t;
       }));
       setSelectedTableId(null);
-    } else if (isTakeout) {
-      setTakeoutOrder([]);
-      setTakeoutNotes('');
+    } else if (isTakeout && selectedTakeoutOrderId) {
+      setTakeoutOrders(prev => prev.filter(t => t.id !== selectedTakeoutOrderId));
+      setSelectedTakeoutOrderId(null);
     }
 
     addNotification(`Venta completada por $${total.toFixed(2)}. Folio ${folioStr}`);
     
     // Automatically switch to Cartera/Reports view so the user can verify immediately
-    setActiveTab('Cartera');
+    changeTab('Cartera');
   };
 
   // Support / Settings additions
@@ -310,13 +418,15 @@ export default function App() {
     localStorage.removeItem('cv_pos_menu');
     localStorage.removeItem('cv_pos_tables');
     localStorage.removeItem('cv_pos_transactions');
+    localStorage.removeItem('cv_pos_takeout_orders');
     setMenuItems(INITIAL_MENU_ITEMS);
     setTables(INITIAL_TABLES);
     setTransactions(INITIAL_TRANSACTIONS);
+    setTakeoutOrders([]);
     setSelectedTableId('table_12');
+    setSelectedTakeoutOrderId(null);
     setIsTakeout(false);
-    setTakeoutOrder([]);
-    setActiveTab('Mesas');
+    changeTab('Mesas');
     addNotification('Punto de venta restablecido.');
   };
 
@@ -330,82 +440,82 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex bg-[#fbfaee] text-[#1b1c15] font-sans">
+    <div className="h-screen w-screen overflow-hidden flex bg-parchment text-[#1b1c15] font-sans">
       
       {/* SideNavBar matching image 5 style perfectly */}
-      <nav className="fixed left-0 top-0 h-full z-50 flex flex-col items-center py-4 bg-surface-dim docked w-20 bg-surface-container-high border-r border-outline-variant shadow-sm hidden md:flex shrink-0">
-        <div className="mb-8 mt-2 flex flex-col items-center">
-          <div className="w-12 h-12 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-serif text-xl font-bold border border-outline-variant shadow-xs">
-            CV
+      <nav className="fixed left-0 top-0 h-full z-50 flex flex-col items-center py-6 bg-surface-dim w-24 hidden md:flex shrink-0">
+        <div className="mb-8 flex flex-col items-center">
+          <div className="w-10 h-10 rounded-lg bg-primary-container text-white flex items-center justify-center shadow-sm">
+            <span className="material-symbols-outlined text-2xl">restaurant</span>
           </div>
         </div>
         
-        <ul className="flex flex-col w-full gap-4 items-center flex-1">
+        <ul className="flex flex-col w-full gap-2 items-center flex-1">
           {/* Mesas Tab */}
           <li className="w-full flex justify-center">
             <button 
-              onClick={() => { setActiveTab('Mesas'); setIsTakeout(false); }}
-              className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all scale-95 duration-150 ease-in-out group relative cursor-pointer ${
+              onClick={() => { changeTab('Mesas'); setIsTakeout(false); }}
+              className={`flex flex-col items-center justify-center w-full py-3 transition-all cursor-pointer ${
                 activeTab === 'Mesas' 
-                  ? 'text-primary bg-surface-container-highest border-l-4 border-primary font-bold' 
-                  : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                  ? 'text-primary font-bold' 
+                  : 'text-on-surface-variant hover:text-primary'
               }`}
             >
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: activeTab === 'Mesas' ? "'FILL' 1" : "'FILL' 0" }}>
+              <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: activeTab === 'Mesas' ? "'FILL' 1" : "'FILL' 0" }}>
                 table_restaurant
               </span>
-              <span className="text-[10px] mt-1 font-sans font-semibold">Mesas</span>
+              <span className="text-[11px] font-sans font-semibold">Mesas</span>
             </button>
           </li>
 
           {/* Menú Tab */}
           <li className="w-full flex justify-center">
             <button 
-              onClick={() => setActiveTab('Menú')}
-              className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all scale-95 duration-150 ease-in-out group relative cursor-pointer ${
+              onClick={() => { setSelectedTableId(null); setSelectedTakeoutOrderId(null); changeTab('Menú'); }}
+              className={`flex flex-col items-center justify-center w-full py-3 transition-all cursor-pointer ${
                 activeTab === 'Menú' 
-                  ? 'text-primary bg-surface-container-highest border-l-4 border-primary font-bold' 
-                  : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                  ? 'text-primary font-bold' 
+                  : 'text-on-surface-variant hover:text-primary'
               }`}
             >
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: activeTab === 'Menú' ? "'FILL' 1" : "'FILL' 0" }}>
+              <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: activeTab === 'Menú' ? "'FILL' 1" : "'FILL' 0" }}>
                 restaurant_menu
               </span>
-              <span className="text-[10px] mt-1 font-sans font-semibold">Menú</span>
+              <span className="text-[11px] font-sans font-semibold">Menú</span>
             </button>
           </li>
 
           {/* Historial Tab */}
           <li className="w-full flex justify-center">
             <button 
-              onClick={() => setActiveTab('Historial')}
-              className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all scale-95 duration-150 ease-in-out group relative cursor-pointer ${
+              onClick={() => changeTab('Historial')}
+              className={`flex flex-col items-center justify-center w-full py-3 transition-all cursor-pointer ${
                 activeTab === 'Historial' 
-                  ? 'text-primary bg-surface-container-highest border-l-4 border-primary font-bold' 
-                  : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                  ? 'text-primary font-bold' 
+                  : 'text-on-surface-variant hover:text-primary'
               }`}
             >
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: activeTab === 'Historial' ? "'FILL' 1" : "'FILL' 0" }}>
+              <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: activeTab === 'Historial' ? "'FILL' 1" : "'FILL' 0" }}>
                 history
               </span>
-              <span className="text-[10px] mt-1 font-sans font-semibold">Historial</span>
+              <span className="text-[11px] font-sans font-semibold text-center leading-tight">Historial</span>
             </button>
           </li>
 
           {/* Cartera (Corte de caja) Tab */}
           <li className="w-full flex justify-center">
             <button 
-              onClick={() => setActiveTab('Cartera')}
-              className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all scale-95 duration-150 ease-in-out group relative cursor-pointer ${
+              onClick={() => changeTab('Cartera')}
+              className={`flex flex-col items-center justify-center w-full py-3 transition-all cursor-pointer ${
                 activeTab === 'Cartera' 
-                  ? 'text-primary bg-surface-container-highest border-l-4 border-primary font-bold' 
-                  : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                  ? 'text-primary font-bold' 
+                  : 'text-on-surface-variant hover:text-primary'
               }`}
             >
-              <span className="material-symbols-outlined" style={{ fontVariationSettings: activeTab === 'Cartera' ? "'FILL' 1" : "'FILL' 0" }}>
+              <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: activeTab === 'Cartera' ? "'FILL' 1" : "'FILL' 0" }}>
                 account_balance_wallet
               </span>
-              <span className="text-[10px] mt-1 font-sans font-semibold">Cartera</span>
+              <span className="text-[11px] font-sans font-semibold text-center leading-tight">Cierre de<br/>caja</span>
             </button>
           </li>
         </ul>
@@ -413,26 +523,26 @@ export default function App() {
         {/* Ajustes Tab */}
         <div className="mt-auto mb-4 w-full flex justify-center">
           <button 
-            onClick={() => setActiveTab('Ajustes')}
-            className={`flex flex-col items-center justify-center w-16 h-16 rounded-xl transition-all scale-95 duration-150 ease-in-out group relative cursor-pointer ${
+            onClick={() => changeTab('Ajustes')}
+            className={`flex flex-col items-center justify-center w-full py-3 transition-all cursor-pointer ${
               activeTab === 'Ajustes' 
-                ? 'text-primary bg-surface-container-highest border-l-4 border-primary font-bold' 
-                : 'text-on-surface-variant hover:bg-surface-container-highest hover:text-primary'
+                ? 'text-primary font-bold' 
+                : 'text-on-surface-variant hover:text-primary'
             }`}
           >
-            <span className="material-symbols-outlined" style={{ fontVariationSettings: activeTab === 'Ajustes' ? "'FILL' 1" : "'FILL' 0" }}>
+            <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: activeTab === 'Ajustes' ? "'FILL' 1" : "'FILL' 0" }}>
               settings
             </span>
-            <span className="text-[10px] mt-1 font-sans font-semibold">Ajustes</span>
+            <span className="text-[11px] font-sans font-semibold">Ajustes</span>
           </button>
         </div>
       </nav>
 
       {/* Main Content Wrapper */}
-      <div className="flex-1 flex flex-col md:pl-20 h-full relative overflow-hidden">
+      <div className="flex-1 flex flex-col md:pl-24 h-full relative overflow-hidden">
         
-        {/* TopNavBar matching image 5 layout perfectly */}
-        <header className="fixed top-0 right-0 left-0 md:left-20 h-16 z-40 flex justify-between items-center px-6 bg-surface-dim text-primary border-b border-outline-variant flat no shadows">
+        {/* TopNavBar matching image layout perfectly */}
+        <header className="fixed top-0 right-0 left-0 md:left-24 h-16 z-40 flex justify-between items-center px-6 bg-surface-dim text-primary">
           
           <div className="flex items-center gap-3">
             {/* Hamburger menu for mobile only */}
@@ -449,29 +559,29 @@ export default function App() {
             
             {/* Search Bar - Synced with current Active View */}
             <div className="relative hidden sm:block">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-on-surface-variant text-md">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-on-surface-variant/50 text-md">
                 search
               </span>
               <input 
                 type="text" 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={activeTab === 'Mesas' ? "Buscar mesa..." : "Buscar platillo..."} 
-                className="pl-9 pr-4 py-2 rounded-full bg-surface-container-lowest border border-outline-variant focus:border-primary focus:ring-0 text-xs font-sans w-48 lg:w-64 transition-all placeholder:text-on-surface-variant/45"
+                placeholder={activeTab === 'Mesas' ? "Buscar mesa o plato..." : "Buscar platillo..."} 
+                className="pl-9 pr-4 py-2.5 rounded-xl bg-surface-container-lowest border-none focus:ring-1 focus:ring-primary text-xs font-sans w-48 lg:w-64 transition-all placeholder:text-on-surface-variant/45 shadow-sm text-on-surface"
               />
             </div>
             
             {/* Nav icons */}
-            <div className="flex items-center gap-1.5 sm:gap-3">
+            <div className="flex items-center gap-2 sm:gap-4">
               
               {/* Notification Toggler */}
               <div className="relative">
                 <button 
                   onClick={() => setShowNotificationPopup(prev => !prev)}
-                  className="p-2 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all"
+                  className="p-2 rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-container-highest transition-all"
                 >
                   <Bell className="w-5 h-5" />
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary shadow-xs"></span>
+                  <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-primary"></span>
                 </button>
                 
                 {/* Simulated notifications dropdown */}
@@ -502,27 +612,13 @@ export default function App() {
               {/* Cashier portrait Profile button */}
               <button 
                 onClick={() => setShowProfileModal(prev => !prev)}
-                className="p-2 rounded-full text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all"
+                className="p-2 rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-container-highest transition-all"
                 title="Perfil del cajero"
               >
-                <div className="w-8 h-8 rounded-full bg-surface-variant overflow-hidden border border-outline-variant shadow-xs">
-                  <img 
-                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYhqI0NW9inCd2QgE9_ILsSlCGcrFq3_To5QzwnWgcS1683sTadyKyPC1ipLZpY0hxY9xKExKrB_t2EwnT2htx0ItiThRMf_NK5S3HvANBLSsuvmQD9EN2rIhPhbMXrBvGAuEoast2A-6chJE0-StEcmyCY4HNLR8qGyTkNMTjWkSPgYAytv2dn9pHE_vK7mSK42DJqtRFq9EUqOVHmj-geQZurmRsjQR1c5KYY1XmL9GZjMmLssRh2iXP9adScQlubs4HiNaBFSg" 
-                    alt="Cajero" 
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                </div>
+                <User className="w-5 h-5" />
               </button>
 
             </div>
-            
-            <button 
-              onClick={() => setActiveTab('Cartera')}
-              className="bg-primary text-white hover:bg-primary-container px-4 sm:px-5 py-2 rounded-full font-sans text-xs font-bold transition-all shadow-sm shrink-0 active:scale-95"
-            >
-              Cerrar Caja
-            </button>
           </div>
         </header>
 
@@ -539,8 +635,8 @@ export default function App() {
               >
                 <div className="flex items-center justify-between border-b border-stone-border/60 pb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-serif text-lg font-bold border border-outline-variant shadow-xs">
-                      CV
+                    <div className="w-10 h-10 rounded-lg bg-primary-container text-white flex items-center justify-center shadow-sm">
+                      <span className="material-symbols-outlined">restaurant</span>
                     </div>
                     <span className="font-serif font-bold text-primary text-md">Casa Vieja POS</span>
                   </div>
@@ -552,7 +648,7 @@ export default function App() {
                 <ul className="space-y-2 flex-grow">
                   <li>
                     <button
-                      onClick={() => { setActiveTab('Mesas'); setIsTakeout(false); setMobileMenuOpen(false); }}
+                      onClick={() => { changeTab('Mesas'); setIsTakeout(false); setMobileMenuOpen(false); }}
                       className={`w-full p-3.5 rounded-xl text-left text-sm font-semibold font-sans flex items-center gap-3 transition-colors ${
                         activeTab === 'Mesas' ? 'bg-primary-fixed text-primary' : 'text-on-surface-variant hover:bg-stone-card'
                       }`}
@@ -563,7 +659,7 @@ export default function App() {
                   </li>
                   <li>
                     <button
-                      onClick={() => { setActiveTab('Menú'); setMobileMenuOpen(false); }}
+                      onClick={() => { setSelectedTableId(null); setSelectedTakeoutOrderId(null); changeTab('Menú'); setMobileMenuOpen(false); }}
                       className={`w-full p-3.5 rounded-xl text-left text-sm font-semibold font-sans flex items-center gap-3 transition-colors ${
                         activeTab === 'Menú' ? 'bg-primary-fixed text-primary' : 'text-on-surface-variant hover:bg-stone-card'
                       }`}
@@ -574,7 +670,7 @@ export default function App() {
                   </li>
                   <li>
                     <button
-                      onClick={() => { setActiveTab('Historial'); setMobileMenuOpen(false); }}
+                      onClick={() => { changeTab('Historial'); setMobileMenuOpen(false); }}
                       className={`w-full p-3.5 rounded-xl text-left text-sm font-semibold font-sans flex items-center gap-3 transition-colors ${
                         activeTab === 'Historial' ? 'bg-primary-fixed text-primary' : 'text-on-surface-variant hover:bg-stone-card'
                       }`}
@@ -585,18 +681,18 @@ export default function App() {
                   </li>
                   <li>
                     <button
-                      onClick={() => { setActiveTab('Cartera'); setMobileMenuOpen(false); }}
-                      className={`w-full p-3.5 rounded-xl text-left text-sm font-semibold font-sans flex items-center gap-3 transition-colors ${
+                      onClick={() => { changeTab('Cartera'); setMobileMenuOpen(false); }}
+                      className={`w-full p-3.5 rounded-xl text-left text-sm font-bold font-sans flex items-center gap-3 transition-colors ${
                         activeTab === 'Cartera' ? 'bg-primary-fixed text-primary' : 'text-on-surface-variant hover:bg-stone-card'
                       }`}
                     >
                       <span className="material-symbols-outlined text-md">account_balance_wallet</span>
-                      <span>Cartera / Finanzas</span>
+                      <span>Cierre de caja</span>
                     </button>
                   </li>
                   <li>
                     <button
-                      onClick={() => { setActiveTab('Ajustes'); setMobileMenuOpen(false); }}
+                      onClick={() => { changeTab('Ajustes'); setMobileMenuOpen(false); }}
                       className={`w-full p-3.5 rounded-xl text-left text-sm font-semibold font-sans flex items-center gap-3 transition-colors ${
                         activeTab === 'Ajustes' ? 'bg-primary-fixed text-primary' : 'text-on-surface-variant hover:bg-stone-card'
                       }`}
@@ -623,19 +719,36 @@ export default function App() {
             {activeTab === 'Mesas' && (
               <TableManagement 
                 tables={tables}
+                takeoutOrders={takeoutOrders}
                 onSelectTable={handleSelectTable}
                 onCleanTable={handleCleanTable}
+                onFreeTable={handleFreeTable}
                 onStartTakeout={handleStartTakeout}
+                onSelectTakeoutOrder={handleSelectTakeoutOrder}
+                onFreeTakeout={handleFreeTakeout}
                 onAssignTable={handleAssignTable}
               />
             )}
 
             {activeTab === 'Menú' && (
-              <MenuCatalog 
-                menuItems={menuItems}
-                onAddToOrder={handleAddToOrder}
-                activeSearchQuery={searchQuery}
-              />
+              <div className="flex flex-col flex-1 h-full min-h-0">
+                {(selectedTableId || selectedTakeoutOrderId) && (
+                  <div className="px-6 md:px-8 pt-6 pb-0 shrink-0">
+                    <button 
+                      onClick={() => changeTab('Mesas')}
+                      className="flex items-center gap-1.5 text-on-surface-variant hover:text-primary font-sans text-sm font-bold transition-colors w-fit"
+                    >
+                      <ArrowLeft className="w-4 h-4" />
+                      <span>Volver a Mesas</span>
+                    </button>
+                  </div>
+                )}
+                <MenuCatalog 
+                  menuItems={menuItems}
+                  onAddToOrder={handleAddToOrder}
+                  activeSearchQuery={searchQuery}
+                />
+              </div>
             )}
 
             {activeTab === 'Cartera' && (
@@ -666,12 +779,15 @@ export default function App() {
           </div>
 
           {/* Persistent Active Ticket Bill sidebar inside POS screen */}
-          {activeTab === 'Menú' && (
+          {activeTab === 'Menú' && (activeTable || (isTakeout && activeTakeout)) && (
             <OrderSidebar 
               activeTable={activeTable}
               isTakeout={isTakeout}
-              takeoutOrder={takeoutOrder}
-              takeoutNotes={takeoutNotes}
+              takeoutCustomerName={activeTakeout?.customerName || ''}
+              takeoutOrder={activeTakeout?.currentOrder || []}
+              takeoutNotes={activeTakeout?.orderNotes || ''}
+              takeoutAddress={activeTakeout?.address || ''}
+              onUpdateTakeoutAddress={handleUpdateTakeoutAddress}
               onUpdateTakeoutNotes={handleUpdateTakeoutNotes}
               onUpdateTableNotes={handleUpdateTableNotes}
               onClearOrder={handleClearOrder}
@@ -681,6 +797,7 @@ export default function App() {
               onCheckoutOrder={handleCheckoutOrder}
               menuItems={menuItems}
               onAddToOrderDirect={handleAddToOrderDirect}
+              onFreeTable={isTakeout && selectedTakeoutOrderId ? () => handleFreeTakeout(selectedTakeoutOrderId) : handleFreeTable}
             />
           )}
 
@@ -709,6 +826,191 @@ export default function App() {
                 <X className="w-4 h-4" />
               </button>
             </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Select Destination Modal for new Item when no active order */}
+        <AnimatePresence>
+          {pendingAddOrderItem && (
+            <div className="fixed inset-0 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.95, opacity: 0 }}
+                className="bg-[#fdfcf0] rounded-2xl max-w-lg w-full p-6 border border-stone-border shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto"
+              >
+                <div className="flex justify-between items-center border-b border-stone-border/40 pb-3">
+                  <h3 className="text-xl font-serif text-[#4a3f35] font-bold">Asignar Producto</h3>
+                  <button onClick={() => { setPendingAddOrderItem(null); setNewTakeoutName(''); }} className="p-1 rounded-lg text-on-surface-variant hover:bg-stone-card">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="text-sm font-sans text-on-surface-variant mb-4">
+                  Selecciona a qué mesa o pedido para llevar deseas agregar: <strong className="text-primary">{pendingAddOrderItem.quantity}x {pendingAddOrderItem.item.name}</strong>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-on-surface mb-2">Mesas Ocupadas</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {tables.filter(t => t.status === 'occupied').length > 0 ? (
+                        tables.filter(t => t.status === 'occupied').map(table => (
+                          <button
+                            key={table.id}
+                            onClick={() => {
+                              setSelectedTableId(table.id);
+                              setIsTakeout(false);
+                              setSelectedTakeoutOrderId(null);
+                              // We simulate adding the item manually because state update might take a cycle
+                              setTables(prev => prev.map(t => {
+                                if (t.id === table.id) {
+                                  const order = [...t.currentOrder];
+                                  const exists = order.find(o => o.menuItem.id === pendingAddOrderItem.item.id && o.notes === pendingAddOrderItem.notes);
+                                  if (exists) {
+                                    const updated = order.map(o => {
+                                      if (o.menuItem.id === pendingAddOrderItem.item.id && o.notes === pendingAddOrderItem.notes) {
+                                        return { ...o, quantity: o.quantity + pendingAddOrderItem.quantity };
+                                      }
+                                      return o;
+                                    });
+                                    return { ...t, currentOrder: updated };
+                                  } else {
+                                    return { ...t, currentOrder: [...order, { menuItem: pendingAddOrderItem.item, quantity: pendingAddOrderItem.quantity, notes: pendingAddOrderItem.notes }] };
+                                  }
+                                }
+                                return t;
+                              }));
+                              setPendingAddOrderItem(null);
+                            }}
+                            className="p-3 border border-stone-border rounded-xl flex flex-col items-center justify-center hover:border-primary hover:bg-primary/5 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-2xl text-on-surface-variant mb-1">table_restaurant</span>
+                            <span className="font-bold text-sm text-on-surface">Mesa {table.number}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="col-span-2 text-xs text-on-surface-variant italic">No hay mesas ocupadas.</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-on-surface mb-2">Pedidos Para Llevar Activos</h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      {takeoutOrders.length > 0 ? (
+                        takeoutOrders.map(order => (
+                          <button
+                            key={order.id}
+                            onClick={() => {
+                              setSelectedTakeoutOrderId(order.id);
+                              setIsTakeout(true);
+                              setSelectedTableId(null);
+                              setTakeoutOrders(prev => prev.map(t => {
+                                if (t.id === order.id) {
+                                  const ord = [...t.currentOrder];
+                                  const exists = ord.find(o => o.menuItem.id === pendingAddOrderItem.item.id && o.notes === pendingAddOrderItem.notes);
+                                  if (exists) {
+                                    const updated = ord.map(o => {
+                                      if (o.menuItem.id === pendingAddOrderItem.item.id && o.notes === pendingAddOrderItem.notes) {
+                                        return { ...o, quantity: o.quantity + pendingAddOrderItem.quantity };
+                                      }
+                                      return o;
+                                    });
+                                    return { ...t, currentOrder: updated };
+                                  } else {
+                                    return { ...t, currentOrder: [...ord, { menuItem: pendingAddOrderItem.item, quantity: pendingAddOrderItem.quantity, notes: pendingAddOrderItem.notes }] };
+                                  }
+                                }
+                                return t;
+                              }));
+                              setPendingAddOrderItem(null);
+                            }}
+                            className="p-3 border border-stone-border rounded-xl flex flex-col items-center justify-center hover:border-primary hover:bg-primary/5 transition-colors text-center"
+                          >
+                            <span className="material-symbols-outlined text-2xl text-on-surface-variant mb-1">shopping_bag</span>
+                            <span className="font-bold text-sm text-on-surface break-all">{order.customerName || 'Sin Nombre'}</span>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="col-span-2 text-xs text-on-surface-variant italic">No hay pedidos para llevar activos.</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4 border-t border-stone-border/40">
+                    <h4 className="font-bold text-xs uppercase tracking-wider text-on-surface mb-3">Crear Nueva Orden</h4>
+                    <div className="flex flex-col sm:flex-row gap-3 items-stretch">
+                      <div className="flex-1 flex gap-2">
+                        <select 
+                          className="flex-1 p-3 rounded-xl bg-stone-card border border-stone-border focus:border-primary focus:ring-0 text-sm font-sans"
+                          onChange={(e) => {
+                            const tableId = e.target.value;
+                            if (tableId) {
+                              setTables(prev => prev.map(t => {
+                                if (t.id === tableId) {
+                                  return { 
+                                    ...t, 
+                                    status: 'occupied', 
+                                    waiter: 'Mesero General', 
+                                    minutes: 1, 
+                                    currentOrder: [{ menuItem: pendingAddOrderItem.item, quantity: pendingAddOrderItem.quantity, notes: pendingAddOrderItem.notes }] 
+                                  };
+                                }
+                                return t;
+                              }));
+                              setSelectedTableId(tableId);
+                              setIsTakeout(false);
+                              setSelectedTakeoutOrderId(null);
+                              setPendingAddOrderItem(null);
+                            }
+                          }}
+                          defaultValue=""
+                        >
+                          <option value="" disabled>Asignar a Mesa Libre...</option>
+                          {tables.filter(t => t.status === 'available' || t.status === 'dirty').map(t => (
+                            <option key={t.id} value={t.id}>Mesa {t.number}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex-1 flex gap-2">
+                        <input 
+                          type="text" 
+                          placeholder="Nombre para llevar..." 
+                          value={newTakeoutName}
+                          onChange={(e) => setNewTakeoutName(e.target.value)}
+                          className="flex-1 p-3 rounded-xl bg-stone-card border border-stone-border focus:border-primary focus:ring-0 text-sm font-sans"
+                        />
+                        <button
+                          onClick={() => {
+                            if (newTakeoutName.trim()) {
+                              const newTakeout: TakeoutOrder = {
+                                id: `takeout_${Date.now()}`,
+                                customerName: newTakeoutName.trim(),
+                                status: 'pending',
+                                currentOrder: [{ menuItem: pendingAddOrderItem.item, quantity: pendingAddOrderItem.quantity, notes: pendingAddOrderItem.notes }],
+                                orderNotes: ''
+                              };
+                              setTakeoutOrders(prev => [...prev, newTakeout]);
+                              setIsTakeout(true);
+                              setSelectedTakeoutOrderId(newTakeout.id);
+                              setSelectedTableId(null);
+                              setPendingAddOrderItem(null);
+                              setNewTakeoutName('');
+                            } else {
+                              alert("Ingresa el nombre del cliente para llevar.");
+                            }
+                          }}
+                          className="px-4 py-3 bg-primary hover:bg-primary-container text-white rounded-xl text-sm font-semibold transition-colors"
+                        >
+                          Crear
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
 
@@ -770,7 +1072,7 @@ export default function App() {
         </AnimatePresence>
 
         {/* Minimal Editorial Footer matching guidelines perfectly */}
-        <footer className="fixed bottom-0 left-0 md:left-20 right-0 h-8 flex items-center justify-between px-6 z-30 bg-[#fdfcf0] border-t border-stone-border flat text-[11px] font-sans text-on-surface-variant">
+        <footer className="fixed bottom-0 left-0 md:left-24 right-0 h-8 flex items-center justify-between px-6 z-30 bg-parchment text-[11px] font-sans text-on-surface-variant">
           <p>© 2024 Casa Vieja - Sistema de Punto de Venta Artesanal</p>
           <div className="flex gap-4">
             <a href="#soporte" onClick={(e) => { e.preventDefault(); alert('Conectando con soporte de Casa Vieja...'); }} className="hover:text-primary transition-colors">Soporte</a>

@@ -19,8 +19,11 @@ import {
 interface OrderSidebarProps {
   activeTable: Table | null;
   isTakeout: boolean;
+  takeoutCustomerName: string;
   takeoutOrder: OrderItem[];
   takeoutNotes: string;
+  takeoutAddress?: string;
+  onUpdateTakeoutAddress: (address: string) => void;
   onUpdateTakeoutNotes: (notes: string) => void;
   onUpdateTableNotes: (tableId: string, notes: string) => void;
   onClearOrder: () => void;
@@ -30,13 +33,17 @@ interface OrderSidebarProps {
   onCheckoutOrder: (paymentMethod: 'Tarjeta' | 'Efectivo', total: number) => void;
   menuItems: MenuItem[];
   onAddToOrderDirect: (item: MenuItem, quantity: number, notes: string) => void;
+  onFreeTable: (tableId: string) => void;
 }
 
 export default function OrderSidebar({
   activeTable,
   isTakeout,
+  takeoutCustomerName,
   takeoutOrder,
   takeoutNotes,
+  takeoutAddress,
+  onUpdateTakeoutAddress,
   onUpdateTakeoutNotes,
   onUpdateTableNotes,
   onClearOrder,
@@ -45,7 +52,8 @@ export default function OrderSidebar({
   onSaveOrder,
   onCheckoutOrder,
   menuItems,
-  onAddToOrderDirect
+  onAddToOrderDirect,
+  onFreeTable
 }: OrderSidebarProps) {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'Tarjeta' | 'Efectivo'>('Tarjeta');
@@ -87,6 +95,7 @@ export default function OrderSidebar({
   };
 
   const handleSave = () => {
+    if (orderItems.length === 0) return;
     onSaveOrder();
     setShowSaveAlert(true);
     setTimeout(() => setShowSaveAlert(false), 2000);
@@ -139,7 +148,7 @@ export default function OrderSidebar({
               <span className="material-symbols-outlined text-primary">
                 {isTakeout ? 'takeout_dining' : 'table_restaurant'}
               </span>
-              <span>{isTakeout ? 'Para Llevar' : `Mesa ${activeTable?.number || '?'}`}</span>
+              <span>{isTakeout ? (takeoutCustomerName ? takeoutCustomerName : 'Para Llevar') : `Mesa ${activeTable?.number || '?'}`}</span>
             </h2>
           </div>
           <button 
@@ -237,8 +246,21 @@ export default function OrderSidebar({
               value={currentNotes}
               onChange={handleNotesChange}
               placeholder="Ej. Término medio, sin cebolla, salsa aparte..."
-              className="w-full p-3 rounded-xl bg-stone-card border border-stone-border focus:border-primary focus:ring-0 text-xs font-sans text-on-surface-variant placeholder:text-stone-border-dark/30 h-20 resize-none transition-all"
+              className="w-full p-3 rounded-xl bg-stone-card border border-stone-border focus:border-primary focus:ring-0 text-xs font-sans text-on-surface-variant placeholder:text-stone-border-dark/30 h-20 resize-none transition-all mb-4"
             />
+            {isTakeout && (
+              <>
+                <label className="block text-[11px] font-bold text-on-surface mb-2 uppercase tracking-wider font-sans">
+                  Domicilio / Referencia (Opcional)
+                </label>
+                <textarea
+                  value={takeoutAddress || ''}
+                  onChange={(e) => onUpdateTakeoutAddress(e.target.value)}
+                  placeholder="Ej. Calle Primavera 123, casa azul..."
+                  className="w-full p-3 rounded-xl bg-stone-card border border-stone-border focus:border-primary focus:ring-0 text-xs font-sans text-on-surface-variant placeholder:text-stone-border-dark/30 h-16 resize-none transition-all"
+                />
+              </>
+            )}
           </div>
         )}
       </div>
@@ -291,33 +313,29 @@ export default function OrderSidebar({
         
         {/* Buttons layout */}
         <div className="grid grid-cols-2 gap-2.5">
-          <button 
-            onClick={() => {
-              if (orderItems.length > 0) {
-                alert('Imprimiendo pre-cuenta en caja...');
-              }
-            }}
-            disabled={orderItems.length === 0}
-            className="py-3 px-3 rounded-xl border border-stone-border/80 text-on-surface font-sans text-xs font-bold hover:bg-stone-card transition-colors flex items-center justify-center gap-1.5 disabled:opacity-45"
-          >
-            <Printer className="w-4 h-4 text-on-surface-variant" />
-            <span>Pre-cuenta</span>
-          </button>
+          {orderItems.length === 0 && (
+            <button
+              onClick={() => isTakeout ? onFreeTable('takeout') : onFreeTable(activeTable!.id)}
+              className="col-span-2 py-3 px-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-sans text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>{isTakeout ? 'Cancelar Pedido' : 'Liberar Mesa'}</span>
+            </button>
+          )}
 
           <button 
             onClick={handleSendComanda}
             disabled={orderItems.length === 0}
-            className="py-3 px-3 rounded-xl bg-[#8d4b00] hover:bg-[#b15f00] text-white font-sans text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 disabled:opacity-45"
+            className={`py-3 px-3 rounded-xl bg-primary hover:bg-primary-container text-white font-sans text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 ${orderItems.length === 0 ? 'hidden' : ''}`}
           >
             <Send className="w-4 h-4" />
             <span>Comanda</span>
           </button>
 
-          {!isTakeout && (
+          {orderItems.length > 0 && (
             <button 
               onClick={handleSave}
-              disabled={orderItems.length === 0}
-              className="col-span-2 py-3 px-3 rounded-xl border border-primary/40 hover:bg-primary-fixed text-primary font-sans text-xs font-bold transition-all flex items-center justify-center gap-1.5 disabled:opacity-45"
+              className="py-3 px-3 rounded-xl border border-primary/40 hover:bg-primary-fixed text-primary font-sans text-xs font-bold transition-all flex items-center justify-center gap-1.5"
             >
               <Save className="w-4 h-4" />
               <span>Guardar Orden</span>
@@ -352,9 +370,24 @@ export default function OrderSidebar({
                 </p>
               </div>
 
-              <div className="bg-stone-card p-4 rounded-xl border border-stone-border/80 flex justify-between items-center">
-                <span className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant">Total a pagar</span>
-                <span className="font-serif text-2xl text-primary font-bold">${total.toFixed(2)}</span>
+              {/* Order Summary */}
+              <div className="bg-stone-card p-4 rounded-xl border border-stone-border/80 space-y-4">
+                <div className="max-h-32 overflow-y-auto pr-1 space-y-2">
+                  {orderItems.map((item, index) => (
+                    <div key={index} className="flex justify-between items-start text-xs font-sans">
+                      <div className="flex gap-2">
+                        <span className="font-bold text-primary">{item.quantity}x</span>
+                        <span className="text-on-surface">{item.menuItem.name}</span>
+                      </div>
+                      <span className="font-bold text-on-surface-variant">${(item.menuItem.price * item.quantity).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="pt-3 border-t border-stone-border/60 flex justify-between items-center">
+                  <span className="font-sans text-xs font-bold uppercase tracking-wider text-on-surface-variant">Total a pagar</span>
+                  <span className="font-serif text-2xl text-primary font-bold">${total.toFixed(2)}</span>
+                </div>
               </div>
 
               {/* Payment Method Tabs */}
