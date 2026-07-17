@@ -1,17 +1,37 @@
+export interface MenuChoice {
+  name: string;
+  priceDelta: number;
+}
+
+export interface MenuOptionGroup {
+  name: string;
+  required: boolean;
+  options: MenuChoice[];
+  multiSelect?: boolean;
+}
+
 export interface MenuItem {
   id: string;
   name: string;
   description: string;
   price: number;
-  category: 'Desayunos' | 'Antojitos' | 'Bebidas' | 'Postres' | 'Especiales';
+  category: 'Desayunos' | 'Comidas' | 'Antojitos' | 'Bebidas' | 'Postres' | 'Especiales';
   image?: string;
   icon?: string;
+  optionGroups?: MenuOptionGroup[];
+}
+
+export interface OrderOption {
+  groupName: string;
+  optionName: string;
+  priceDelta: number;
 }
 
 export interface OrderItem {
   menuItem: MenuItem;
   quantity: number;
   notes: string;
+  selectedOptions?: OrderOption[];
 }
 
 export interface TakeoutOrder {
@@ -42,3 +62,4 @@ export interface Transaction {
   method: 'Tarjeta' | 'Efectivo';
   total: number;
 }
+

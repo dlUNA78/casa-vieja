@@ -1,79 +1,7 @@
 import { MenuItem, Table, Transaction } from './types';
+import { menuItemsData } from './data/menu';
 
-export const INITIAL_MENU_ITEMS: MenuItem[] = [
-  {
-    id: 'chilaquiles_rojos',
-    name: 'Chilaquiles Rojos',
-    description: 'Con pollo, crema, queso artesanal y cebolla morada.',
-    price: 120,
-    category: 'Desayunos',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAo_ETMng8rFe2azYpzu4bHpk5jxlDC-iarslzku25dH0rE_YmSXvxHIcbd1HHSzSPloGhTiYpdafZEqGJphU-ZOtir6Bw-b6Ei_6gEDmea7FIV3iX47SuyeqPDxFcPeWPSxB2GBdtVmfYw3lCTNAMOqboJbGTR2ens4kjTpqy41W1grDYGnFTiLZNmGhaGnFtyJg_ZfeDtf1k-v8UBG3t3ucWlAZLTPRhyh3Wk8-RAcP-Pwt0yiS75Ag3DOX7CjK2K-RBCTJGXDCk'
-  },
-  {
-    id: 'cafe_olla',
-    name: 'Café de Olla',
-    description: 'Tradicional con piloncillo y canela.',
-    price: 95,
-    category: 'Bebidas',
-    icon: 'local_cafe'
-  },
-  {
-    id: 'huevos_motulenos',
-    name: 'Huevos Motuleños',
-    description: 'Sobre tortilla frita con frijoles, salsa de tomate, jamón y chícharos.',
-    price: 145,
-    category: 'Desayunos',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAo_ETMng8rFe2azYpzu4bHpk5jxlDC-iarslzku25dH0rE_YmSXvxHIcbd1HHSzSPloGhTiYpdafZEqGJphU-ZOtir6Bw-b6Ei_6gEDmea7FIV3iX47SuyeqPDxFcPeWPSxB2GBdtVmfYw3lCTNAMOqboJbGTR2ens4kjTpqy41W1grDYGnFTiLZNmGhaGnFtyJg_ZfeDtf1k-v8UBG3t3ucWlAZLTPRhyh3Wk8-RAcP-Pwt0yiS75Ag3DOX7CjK2K-RBCTJGXDCk'
-  },
-  {
-    id: 'naranjada',
-    name: 'Naranjada',
-    description: 'Natural o mineral, recién exprimida.',
-    price: 45,
-    category: 'Bebidas',
-    icon: 'local_drink'
-  },
-  {
-    id: 'enchiladas_suizas',
-    name: 'Enchiladas Suizas',
-    description: 'Rellenas de pollo deshuesado, salsa verde cremosa, gratinadas con queso manchego.',
-    price: 135,
-    category: 'Antojitos',
-    image: 'https://images.unsplash.com/photo-1599974579688-8dbdd335c77f?auto=format&fit=crop&q=80&w=600'
-  },
-  {
-    id: 'tacos_cochinita',
-    name: 'Tacos de Cochinita',
-    description: 'Tres deliciosos tacos con carne marinada en achiote, acompañados de cebolla morada curtida.',
-    price: 110,
-    category: 'Antojitos',
-    icon: 'restaurant'
-  },
-  {
-    id: 'flan_napolitano',
-    name: 'Flan Napolitano',
-    description: 'Flan casero suave y cremoso con caramelo de piloncillo artesanal.',
-    price: 65,
-    category: 'Postres',
-    icon: 'icecream'
-  },
-  {
-    id: 'arroz_leche',
-    name: 'Arroz con Leche',
-    description: 'Cocinado lentamente con canela de Ceilán, ralladura de limón y pasas.',
-    price: 60,
-    category: 'Postres',
-    icon: 'cookie'
-  },
-  {
-    id: 'especial_casa_vieja',
-    name: 'Especial Casa Vieja',
-    description: 'Corte de arrachera con nopales asados, cebollitas cambray y mole poblano.',
-    price: 185,
-    category: 'Especiales',
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=600'
-  }
-];
+export const INITIAL_MENU_ITEMS: MenuItem[] = menuItemsData;
 
 export const INITIAL_TABLES: Table[] = [
   {
@@ -84,12 +12,12 @@ export const INITIAL_TABLES: Table[] = [
     minutes: 45,
     currentOrder: [
       {
-        menuItem: INITIAL_MENU_ITEMS[4], // Enchiladas Suizas
+        menuItem: INITIAL_MENU_ITEMS[8], // Enchiladas Rojas
         quantity: 2,
         notes: 'Picosas'
       },
       {
-        menuItem: INITIAL_MENU_ITEMS[1], // Café de olla
+        menuItem: INITIAL_MENU_ITEMS[0], // Chilaquiles
         quantity: 1,
         notes: ''
       }
@@ -109,9 +37,9 @@ export const INITIAL_TABLES: Table[] = [
     minutes: 15,
     currentOrder: [
       {
-        menuItem: INITIAL_MENU_ITEMS[5], // Tacos Cochinita
+        menuItem: INITIAL_MENU_ITEMS[1], // Huevos al Gusto
         quantity: 1,
-        notes: 'Sin chile'
+        notes: 'Sin cebolla'
       }
     ]
   },
@@ -135,29 +63,11 @@ export const INITIAL_TABLES: Table[] = [
     minutes: 10,
     currentOrder: [
       {
-        menuItem: INITIAL_MENU_ITEMS[0], // Chilaquiles Rojos
+        menuItem: INITIAL_MENU_ITEMS[0], // Chilaquiles
         quantity: 1,
-        notes: 'Sin cebolla, extra crema'
-      },
-      {
-        menuItem: INITIAL_MENU_ITEMS[3], // Naranjada
-        quantity: 2,
-        notes: 'Mineral'
+        notes: ''
       }
-    ],
-    orderNotes: 'Ej. Término medio, sin sal...'
-  },
-  {
-    id: 'table_6',
-    number: 6,
-    status: 'available',
-    currentOrder: []
-  },
-  {
-    id: 'table_7',
-    number: 7,
-    status: 'available',
-    currentOrder: []
+    ]
   }
 ];
 

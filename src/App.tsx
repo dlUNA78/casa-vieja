@@ -57,7 +57,7 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   
   // Pending add item when no active order exists
-  const [pendingAddOrderItem, setPendingAddOrderItem] = useState<{item: MenuItem, quantity: number, notes: string} | null>(null);
+  const [pendingAddOrderItem, setPendingAddOrderItem] = useState<{item: MenuItem, quantity: number, notes: string, selectedOptions?: OrderOption[]} | null>(null);
   const [newTakeoutName, setNewTakeoutName] = useState('');
 
   // UI States
@@ -197,22 +197,24 @@ export default function App() {
   };
 
   // Add Item to Order
-  const handleAddToOrder = (item: MenuItem, quantity: number, notes: string) => {
+  const handleAddToOrder = (item: MenuItem, quantity: number, notes: string, options?: OrderOption[]) => {
+    const isSameItem = (o: OrderItem) => o.menuItem.id === item.id && o.notes === notes && JSON.stringify(o.selectedOptions || []) === JSON.stringify(options || []);
+
     if (isTakeout && selectedTakeoutOrderId) {
       setTakeoutOrders(prev => prev.map(t => {
         if (t.id === selectedTakeoutOrderId) {
           const order = [...t.currentOrder];
-          const exists = order.find(o => o.menuItem.id === item.id && o.notes === notes);
+          const exists = order.find(isSameItem);
           if (exists) {
             const updated = order.map(o => {
-              if (o.menuItem.id === item.id && o.notes === notes) {
+              if (isSameItem(o)) {
                 return { ...o, quantity: o.quantity + quantity };
               }
               return o;
             });
             return { ...t, currentOrder: updated };
           } else {
-            return { ...t, currentOrder: [...order, { menuItem: item, quantity, notes }] };
+            return { ...t, currentOrder: [...order, { menuItem: item, quantity, notes, selectedOptions: options }] };
           }
         }
         return t;
@@ -221,23 +223,23 @@ export default function App() {
       setTables(prev => prev.map(t => {
         if (t.id === selectedTableId) {
           const order = [...t.currentOrder];
-          const exists = order.find(o => o.menuItem.id === item.id && o.notes === notes);
+          const exists = order.find(isSameItem);
           if (exists) {
             const updated = order.map(o => {
-              if (o.menuItem.id === item.id && o.notes === notes) {
+              if (isSameItem(o)) {
                 return { ...o, quantity: o.quantity + quantity };
               }
               return o;
             });
             return { ...t, currentOrder: updated };
           } else {
-            return { ...t, currentOrder: [...order, { menuItem: item, quantity, notes }] };
+            return { ...t, currentOrder: [...order, { menuItem: item, quantity, notes, selectedOptions: options }] };
           }
         }
         return t;
       }));
     } else {
-      setPendingAddOrderItem({ item, quantity, notes });
+      setPendingAddOrderItem({ item, quantity, notes, selectedOptions: options });
     }
   };
 
@@ -866,17 +868,18 @@ export default function App() {
                               setTables(prev => prev.map(t => {
                                 if (t.id === table.id) {
                                   const order = [...t.currentOrder];
-                                  const exists = order.find(o => o.menuItem.id === pendingAddOrderItem.item.id && o.notes === pendingAddOrderItem.notes);
+                                  const isSameItem = (o: OrderItem) => o.menuItem.id === pendingAddOrderItem.item.id && o.notes === pendingAddOrderItem.notes && JSON.stringify(o.selectedOptions || []) === JSON.stringify(pendingAddOrderItem.selectedOptions || []);
+                                  const exists = order.find(isSameItem);
                                   if (exists) {
                                     const updated = order.map(o => {
-                                      if (o.menuItem.id === pendingAddOrderItem.item.id && o.notes === pendingAddOrderItem.notes) {
+                                      if (isSameItem(o)) {
                                         return { ...o, quantity: o.quantity + pendingAddOrderItem.quantity };
                                       }
                                       return o;
                                     });
                                     return { ...t, currentOrder: updated };
                                   } else {
-                                    return { ...t, currentOrder: [...order, { menuItem: pendingAddOrderItem.item, quantity: pendingAddOrderItem.quantity, notes: pendingAddOrderItem.notes }] };
+                                    return { ...t, currentOrder: [...order, { menuItem: pendingAddOrderItem.item, quantity: pendingAddOrderItem.quantity, notes: pendingAddOrderItem.notes, selectedOptions: pendingAddOrderItem.selectedOptions }] };
                                   }
                                 }
                                 return t;
@@ -909,17 +912,18 @@ export default function App() {
                               setTakeoutOrders(prev => prev.map(t => {
                                 if (t.id === order.id) {
                                   const ord = [...t.currentOrder];
-                                  const exists = ord.find(o => o.menuItem.id === pendingAddOrderItem.item.id && o.notes === pendingAddOrderItem.notes);
+                                  const isSameItem = (o: OrderItem) => o.menuItem.id === pendingAddOrderItem.item.id && o.notes === pendingAddOrderItem.notes && JSON.stringify(o.selectedOptions || []) === JSON.stringify(pendingAddOrderItem.selectedOptions || []);
+                                  const exists = ord.find(isSameItem);
                                   if (exists) {
                                     const updated = ord.map(o => {
-                                      if (o.menuItem.id === pendingAddOrderItem.item.id && o.notes === pendingAddOrderItem.notes) {
+                                      if (isSameItem(o)) {
                                         return { ...o, quantity: o.quantity + pendingAddOrderItem.quantity };
                                       }
                                       return o;
                                     });
                                     return { ...t, currentOrder: updated };
                                   } else {
-                                    return { ...t, currentOrder: [...ord, { menuItem: pendingAddOrderItem.item, quantity: pendingAddOrderItem.quantity, notes: pendingAddOrderItem.notes }] };
+                                    return { ...t, currentOrder: [...ord, { menuItem: pendingAddOrderItem.item, quantity: pendingAddOrderItem.quantity, notes: pendingAddOrderItem.notes, selectedOptions: pendingAddOrderItem.selectedOptions }] };
                                   }
                                 }
                                 return t;
@@ -954,7 +958,7 @@ export default function App() {
                                     status: 'occupied', 
                                     waiter: 'Mesero General', 
                                     minutes: 1, 
-                                    currentOrder: [{ menuItem: pendingAddOrderItem.item, quantity: pendingAddOrderItem.quantity, notes: pendingAddOrderItem.notes }] 
+                                    currentOrder: [{ menuItem: pendingAddOrderItem.item, quantity: pendingAddOrderItem.quantity, notes: pendingAddOrderItem.notes, selectedOptions: pendingAddOrderItem.selectedOptions }] 
                                   };
                                 }
                                 return t;
@@ -988,7 +992,7 @@ export default function App() {
                                 id: `takeout_${Date.now()}`,
                                 customerName: newTakeoutName.trim(),
                                 status: 'pending',
-                                currentOrder: [{ menuItem: pendingAddOrderItem.item, quantity: pendingAddOrderItem.quantity, notes: pendingAddOrderItem.notes }],
+                                currentOrder: [{ menuItem: pendingAddOrderItem.item, quantity: pendingAddOrderItem.quantity, notes: pendingAddOrderItem.notes, selectedOptions: pendingAddOrderItem.selectedOptions }],
                                 orderNotes: ''
                               };
                               setTakeoutOrders(prev => [...prev, newTakeout]);

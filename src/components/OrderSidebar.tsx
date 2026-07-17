@@ -67,7 +67,10 @@ export default function OrderSidebar({
   const currentNotes = isTakeout ? takeoutNotes : (activeTable?.orderNotes || '');
 
   // Totals calculations
-  const subtotal = orderItems.reduce((sum, item) => sum + (item.menuItem.price * item.quantity), 0);
+  const subtotal = orderItems.reduce((sum, item) => {
+    const optionsTotal = item.selectedOptions?.reduce((oSum, opt) => oSum + opt.priceDelta, 0) || 0;
+    return sum + ((item.menuItem.price + optionsTotal) * item.quantity);
+  }, 0);
   const iva = subtotal * 0.16;
   const total = subtotal + iva;
 
@@ -175,58 +178,64 @@ export default function OrderSidebar({
 
       {/* Bill Items List */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
-        {orderItems.map((item, index) => (
-          <div 
-            key={`${item.menuItem.id}-${index}`} 
-            className="p-4 rounded-xl bg-[#ffffff] border border-stone-border flex flex-col gap-3 shadow-xs hover:border-stone-border-dark transition-colors"
-          >
-            <div className="flex justify-between items-start">
-              <div className="flex-1 pr-4">
-                <h4 className="font-sans text-sm font-bold text-on-surface">{item.menuItem.name}</h4>
-                {item.notes && (
-                  <p className="text-xs text-on-surface-variant italic font-sans mt-1 bg-stone-card px-2 py-0.5 rounded-md inline-block">
-                    {item.notes}
-                  </p>
-                )}
-                
-                {/* Modifiers / Extras Button */}
-                <button
-                  type="button"
-                  onClick={() => handleOpenExtras(item)}
-                  className="mt-2 text-[11px] font-semibold text-primary hover:text-primary-container flex items-center gap-1 transition-colors"
-                >
-                  <PlusCircle className="w-3 h-3" />
-                  <span>Ver extras / salsas</span>
-                </button>
-              </div>
-              <span className="font-sans font-semibold text-primary text-sm">${item.menuItem.price}</span>
-            </div>
+        {orderItems.map((item, index) => {
+          const optionsTotal = item.selectedOptions?.reduce((sum, opt) => sum + opt.priceDelta, 0) || 0;
+          const unitPrice = item.menuItem.price + optionsTotal;
+          
+          return (
+            <div 
+              key={`${item.menuItem.id}-${index}`} 
+              className="p-4 rounded-xl bg-[#ffffff] border border-stone-border flex flex-col gap-3 shadow-xs hover:border-stone-border-dark transition-colors"
+            >
+              <div className="flex justify-between items-start">
+                <div className="flex-1 pr-4">
+                  <h4 className="font-sans text-sm font-bold text-on-surface">{item.menuItem.name}</h4>
+                  
+                  {item.selectedOptions && item.selectedOptions.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1.5 mb-1">
+                      {item.selectedOptions.map((opt, optIdx) => (
+                        <span key={optIdx} className="text-[10px] font-sans font-medium text-on-surface-variant bg-stone-card px-2 py-0.5 rounded-md border border-stone-border/40">
+                          {opt.optionName} {opt.priceDelta > 0 && <span className="text-primary font-bold">(+${opt.priceDelta})</span>}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
-            {/* Quantity adjusters */}
-            <div className="flex items-center justify-between mt-1 pt-2 border-t border-stone-border/40">
-              <div className="flex items-center bg-stone-card rounded-lg p-0.5 border border-stone-border/50">
-                <button 
-                  onClick={() => onUpdateQuantity(item.menuItem.id, -1)}
-                  className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:bg-stone-border transition-colors"
-                >
-                  <span className="material-symbols-outlined text-xs">remove</span>
-                </button>
-                <span className="w-8 text-center font-sans font-bold text-xs text-on-surface">
-                  {item.quantity}
-                </span>
-                <button 
-                  onClick={() => onUpdateQuantity(item.menuItem.id, 1)}
-                  className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:bg-stone-border transition-colors"
-                >
-                  <span className="material-symbols-outlined text-xs">add</span>
-                </button>
+                  {item.notes && (
+                    <p className="text-xs text-on-surface-variant italic font-sans mt-1 bg-stone-card/50 px-2 py-0.5 rounded-md inline-block">
+                      {item.notes}
+                    </p>
+                  )}
+                </div>
+                <span className="font-sans font-semibold text-primary text-sm">${unitPrice.toFixed(2)}</span>
               </div>
-              <span className="font-sans font-bold text-sm text-on-surface">
-                ${(item.menuItem.price * item.quantity).toFixed(2)}
-              </span>
+
+              {/* Quantity adjusters */}
+              <div className="flex items-center justify-between mt-1 pt-2 border-t border-stone-border/40">
+                <div className="flex items-center bg-stone-card rounded-lg p-0.5 border border-stone-border/50">
+                  <button 
+                    onClick={() => onUpdateQuantity(item.menuItem.id, -1)}
+                    className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:bg-stone-border transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-xs">remove</span>
+                  </button>
+                  <span className="w-8 text-center font-sans font-bold text-xs text-on-surface">
+                    {item.quantity}
+                  </span>
+                  <button 
+                    onClick={() => onUpdateQuantity(item.menuItem.id, 1)}
+                    className="w-7 h-7 rounded flex items-center justify-center text-on-surface-variant hover:bg-stone-border transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-xs">add</span>
+                  </button>
+                </div>
+                <span className="font-sans font-bold text-sm text-on-surface">
+                  ${(unitPrice * item.quantity).toFixed(2)}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         {orderItems.length === 0 && (
           <div className="py-16 text-center text-on-surface-variant/55 font-sans space-y-3">
@@ -373,15 +382,20 @@ export default function OrderSidebar({
               {/* Order Summary */}
               <div className="bg-stone-card p-4 rounded-xl border border-stone-border/80 space-y-4">
                 <div className="max-h-32 overflow-y-auto pr-1 space-y-2">
-                  {orderItems.map((item, index) => (
-                    <div key={index} className="flex justify-between items-start text-xs font-sans">
-                      <div className="flex gap-2">
-                        <span className="font-bold text-primary">{item.quantity}x</span>
-                        <span className="text-on-surface">{item.menuItem.name}</span>
+                  {orderItems.map((item, index) => {
+                    const optionsTotal = item.selectedOptions?.reduce((sum, opt) => sum + opt.priceDelta, 0) || 0;
+                    const unitPrice = item.menuItem.price + optionsTotal;
+                    
+                    return (
+                      <div key={index} className="flex justify-between items-start text-xs font-sans">
+                        <div className="flex gap-2">
+                          <span className="font-bold text-primary">{item.quantity}x</span>
+                          <span className="text-on-surface">{item.menuItem.name}</span>
+                        </div>
+                        <span className="font-bold text-on-surface-variant">${(unitPrice * item.quantity).toFixed(2)}</span>
                       </div>
-                      <span className="font-bold text-on-surface-variant">${(item.menuItem.price * item.quantity).toFixed(2)}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 
                 <div className="pt-3 border-t border-stone-border/60 flex justify-between items-center">
