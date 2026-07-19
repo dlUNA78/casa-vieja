@@ -328,6 +328,24 @@ export default function App() {
   };
 
   const handleComandaSent = () => {
+    const identifier = isTakeout ? `Para Llevar (${activeTakeout?.customerName || ''})` : `Mesa ${activeTable?.number}`;
+    const items = isTakeout ? (activeTakeout?.currentOrder || []) : (activeTable?.currentOrder || []);
+    
+    console.log(`\n=== TICKET DE COCINA ===`);
+    console.log(`Destino: ${identifier}`);
+    console.log(`Fecha/Hora: ${new Date().toLocaleString()}`);
+    console.log(`------------------------`);
+    items.forEach(item => {
+      console.log(`[ ] ${item.quantity}x ${item.menuItem.name}`);
+      if (item.selectedOptions && item.selectedOptions.length > 0) {
+        console.log(`      Opciones: ${item.selectedOptions.map(o => o.optionName).join(', ')}`);
+      }
+      if (item.notes) {
+        console.log(`      Notas: ${item.notes}`);
+      }
+    });
+    console.log(`========================\n`);
+
     addNotification(
       isTakeout 
         ? `Nueva comanda para ${activeTakeout?.customerName || 'Llevar'} enviada a cocina.` 
@@ -371,6 +389,30 @@ export default function App() {
     };
 
     setTransactions(prev => [newTx, ...prev]);
+
+    console.log(`\n=== TICKET DE PAGO (PARCIAL) ===`);
+    console.log(`Folio: ${folioStr}`);
+    console.log(`Destino: ${originStr}`);
+    console.log(`Fecha/Hora: ${timestampStr} ${dateStr}`);
+    console.log(`------------------------`);
+    itemsPaid.forEach(item => {
+      const optionsTotal = item.selectedOptions?.reduce((sum, opt) => sum + opt.priceDelta, 0) || 0;
+      const unitPrice = item.menuItem.price + optionsTotal;
+      const itemTotal = unitPrice * item.quantity;
+      console.log(`${item.quantity}x ${item.menuItem.name}`.padEnd(30) + `$${itemTotal.toFixed(2)}`);
+      if (item.selectedOptions && item.selectedOptions.length > 0) {
+        console.log(`   + ${item.selectedOptions.map(o => o.optionName).join(', ')}`);
+      }
+      if (item.notes) {
+        console.log(`   * ${item.notes}`);
+      }
+    });
+    console.log(`------------------------`);
+    console.log(`Subtotal:`.padEnd(30) + `$${(total / 1.16).toFixed(2)}`);
+    console.log(`IVA (16%):`.padEnd(30) + `$${(total - (total / 1.16)).toFixed(2)}`);
+    console.log(`TOTAL A PAGAR:`.padEnd(30) + `$${total.toFixed(2)}`);
+    console.log(`Método de Pago: ${paymentMethod}`);
+    console.log(`========================\n`);
 
     const isSameItem = (a: OrderItem, b: OrderItem) => {
       return a.menuItem.id === b.menuItem.id && a.notes === b.notes && JSON.stringify(a.selectedOptions || []) === JSON.stringify(b.selectedOptions || []);
@@ -445,6 +487,32 @@ export default function App() {
     };
 
     setTransactions(prev => [newTx, ...prev]);
+
+    const activeOrderItems = isTakeout ? activeTakeout?.currentOrder || [] : activeTable?.currentOrder || [];
+    
+    console.log(`\n=== TICKET DE PAGO ===`);
+    console.log(`Folio: ${folioStr}`);
+    console.log(`Destino: ${originStr}`);
+    console.log(`Fecha/Hora: ${timestampStr} ${dateStr}`);
+    console.log(`------------------------`);
+    activeOrderItems.forEach(item => {
+      const optionsTotal = item.selectedOptions?.reduce((sum, opt) => sum + opt.priceDelta, 0) || 0;
+      const unitPrice = item.menuItem.price + optionsTotal;
+      const itemTotal = unitPrice * item.quantity;
+      console.log(`${item.quantity}x ${item.menuItem.name}`.padEnd(30) + `$${itemTotal.toFixed(2)}`);
+      if (item.selectedOptions && item.selectedOptions.length > 0) {
+        console.log(`   + ${item.selectedOptions.map(o => o.optionName).join(', ')}`);
+      }
+      if (item.notes) {
+        console.log(`   * ${item.notes}`);
+      }
+    });
+    console.log(`------------------------`);
+    console.log(`Subtotal:`.padEnd(30) + `$${(total / 1.16).toFixed(2)}`);
+    console.log(`IVA (16%):`.padEnd(30) + `$${(total - (total / 1.16)).toFixed(2)}`);
+    console.log(`TOTAL A PAGAR:`.padEnd(30) + `$${total.toFixed(2)}`);
+    console.log(`Método de Pago: ${paymentMethod}`);
+    console.log(`========================\n`);
 
     // Update table status to dirty (needs cleaning!) to simulate real restaurant flow
     if (!isTakeout && selectedTableId) {
