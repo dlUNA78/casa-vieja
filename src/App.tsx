@@ -344,6 +344,78 @@ export default function App() {
     }
   };
 
+  // Partial Payment for Split Bills
+  const handlePartialCheckoutOrder = (paymentMethod: 'Tarjeta' | 'Efectivo', total: number, itemsPaid: OrderItem[]) => {
+    const nextFolioNum = 142 + transactions.length;
+    const folioStr = `#00${nextFolioNum}-P`; // P for partial
+
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    const timestampStr = `${hours}:${minutes} ${ampm}`;
+    const dateStr = now.toISOString().split('T')[0];
+
+    const originStr = isTakeout ? `Para Llevar (${activeTakeout?.customerName || ''})` : `Mesa ${activeTable?.number}`;
+
+    const newTx: Transaction = {
+      id: `tx_${nextFolioNum}_p`,
+      folio: folioStr,
+      timestamp: timestampStr,
+      date: dateStr,
+      type: `${originStr} (Parcial)`,
+      method: paymentMethod,
+      total
+    };
+
+    setTransactions(prev => [newTx, ...prev]);
+
+    const isSameItem = (a: OrderItem, b: OrderItem) => {
+      return a.menuItem.id === b.menuItem.id && a.notes === b.notes && JSON.stringify(a.selectedOptions || []) === JSON.stringify(b.selectedOptions || []);
+    };
+
+    // Update table order
+    if (!isTakeout && selectedTableId) {
+      setTables(prev => prev.map(t => {
+        if (t.id === selectedTableId) {
+          const newOrder = [...t.currentOrder].map(o => ({...o}));
+          itemsPaid.forEach(paid => {
+             const existingIndex = newOrder.findIndex(o => isSameItem(o, paid));
+             if (existingIndex !== -1) {
+                newOrder[existingIndex].quantity -= paid.quantity;
+             }
+          });
+          const filteredOrder = newOrder.filter(o => o.quantity > 0);
+          if (filteredOrder.length === 0) {
+             return { ...t, status: 'dirty', currentOrder: [], orderNotes: '' };
+          }
+          return { ...t, currentOrder: filteredOrder };
+        }
+        return t;
+      }));
+      // If table is now empty, we'll deselect it... wait, it's better to check after update
+    } else if (isTakeout && selectedTakeoutOrderId) {
+      setTakeoutOrders(prev => prev.map(t => {
+        if (t.id === selectedTakeoutOrderId) {
+          const newOrder = [...t.currentOrder].map(o => ({...o}));
+          itemsPaid.forEach(paid => {
+             const existingIndex = newOrder.findIndex(o => isSameItem(o, paid));
+             if (existingIndex !== -1) {
+                newOrder[existingIndex].quantity -= paid.quantity;
+             }
+          });
+          const filteredOrder = newOrder.filter(o => o.quantity > 0);
+          return { ...t, currentOrder: filteredOrder };
+        }
+        return t;
+      }).filter(t => t.currentOrder.length > 0)); // Remove if empty
+    }
+
+    addNotification(`Pago parcial completado por $${total.toFixed(2)}.`);
+  };
+
   // Complete Payment & checkout
   const handleCheckoutOrder = (paymentMethod: 'Tarjeta' | 'Efectivo', total: number) => {
     const nextFolioNum = 142 + transactions.length;
@@ -797,6 +869,7 @@ export default function App() {
               onComandaSent={handleComandaSent}
               onSaveOrder={handleSaveOrder}
               onCheckoutOrder={handleCheckoutOrder}
+              onPartialCheckoutOrder={handlePartialCheckoutOrder}
               menuItems={menuItems}
               onAddToOrderDirect={handleAddToOrderDirect}
               onFreeTable={isTakeout && selectedTakeoutOrderId ? () => handleFreeTakeout(selectedTakeoutOrderId) : handleFreeTable}

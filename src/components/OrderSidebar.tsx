@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Table, OrderItem, MenuItem } from '../types';
+import SplitBillModal from './SplitBillModal';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Trash2, 
@@ -31,6 +32,7 @@ interface OrderSidebarProps {
   onComandaSent: () => void;
   onSaveOrder: () => void;
   onCheckoutOrder: (paymentMethod: 'Tarjeta' | 'Efectivo', total: number) => void;
+  onPartialCheckoutOrder: (paymentMethod: 'Tarjeta' | 'Efectivo', total: number, itemsPaid: OrderItem[]) => void;
   menuItems: MenuItem[];
   onAddToOrderDirect: (item: MenuItem, quantity: number, notes: string) => void;
   onFreeTable: (tableId: string) => void;
@@ -51,11 +53,13 @@ export default function OrderSidebar({
   onComandaSent,
   onSaveOrder,
   onCheckoutOrder,
+  onPartialCheckoutOrder,
   menuItems,
   onAddToOrderDirect,
   onFreeTable
 }: OrderSidebarProps) {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [showSplitBill, setShowSplitBill] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<'Tarjeta' | 'Efectivo'>('Tarjeta');
   const [cashAmountPaid, setCashAmountPaid] = useState('');
   const [showComandaAlert, setShowComandaAlert] = useState(false);
@@ -359,8 +363,28 @@ export default function OrderSidebar({
             <CreditCard className="w-4 h-4" />
             <span>Cobrar Orden</span>
           </button>
+
+          <button 
+            onClick={() => setShowSplitBill(true)}
+            disabled={orderItems.length < 2}
+            className="col-span-2 py-3 rounded-xl border border-secondary/40 text-secondary hover:bg-secondary/10 font-sans text-sm font-bold transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-45"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 3v18"/><path d="M19 3v18"/><path d="M5 12h14"/></svg>
+            <span>Dividir Cuenta</span>
+          </button>
         </div>
       </div>
+
+      {showSplitBill && (
+        <SplitBillModal 
+          orderItems={orderItems} 
+          title={isTakeout ? 'Para Llevar' : `Mesa ${activeTable?.number}`}
+          onClose={() => setShowSplitBill(false)} 
+          onPartialCheckout={(method, total, itemsPaid) => {
+            onPartialCheckoutOrder(method, total, itemsPaid);
+          }}
+        />
+      )}
 
       {/* Checkout Dialog Modal */}
       <AnimatePresence>
