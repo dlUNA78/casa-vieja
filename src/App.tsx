@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MenuItem, Table, Transaction, OrderItem, TakeoutOrder } from './types';
+import { MenuItem, Table, Transaction, OrderItem, TakeoutOrder, OrderOption } from './types';
 import { 
   INITIAL_MENU_ITEMS, 
   INITIAL_TABLES, 

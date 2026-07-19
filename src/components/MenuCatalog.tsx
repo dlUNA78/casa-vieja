@@ -60,18 +60,7 @@ export default function MenuCatalog({
 
   const handleQuickAdd = (item: MenuItem, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (item.optionGroups && item.optionGroups.length > 0) {
-      handleOpenAddModal(item, e);
-      return;
-    }
-    
-    onAddToOrder(item, 1, '');
-    
-    // Provide quick visual success feedback
-    setAddedItemFeedbackId(item.id);
-    setTimeout(() => {
-      setAddedItemFeedbackId(null);
-    }, 1200);
+    handleOpenAddModal(item, e);
   };
 
   const handleOptionToggle = (groupName: string, optionName: string, multiSelect: boolean = false) => {
