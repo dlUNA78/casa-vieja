@@ -1,10 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MenuItem, Table, Transaction, OrderItem, TakeoutOrder, OrderOption } from './types';
 import { 
   INITIAL_MENU_ITEMS, 
   INITIAL_TABLES, 
   INITIAL_TRANSACTIONS 
 } from './data';
+import { io, Socket } from 'socket.io-client';
+import { playWaiterConnected, playNewOrder } from './utils/sounds';
+
+// ─── Configuración del servidor socket ───────────────────────────────────────
+// Cambia esta IP por la de tu máquina en la red local cuando uses el celular.
+// IP local actual: 192.168.1.72
+const SOCKET_SERVER_URL = 'http://192.168.1.72:3001';
 
 import ComandasView from './components/ComandasView';
 import TableManagement from './components/TableManagement';
@@ -34,6 +41,12 @@ import Sidebar from './components/Sidebar';
 import CashoutFlow from './components/CashoutFlow';
 
 export default function App() {
+  // Instancia del socket (ref para no recrearla en cada render)
+  const socketRef = useRef<Socket | null>(null);
+  if (!socketRef.current) {
+    socketRef.current = io(SOCKET_SERVER_URL, { autoConnect: true });
+  }
+  const socket = socketRef.current;
   // Global State
   const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
     const saved = null; // localStorage.getItem('cv_pos_menu');
@@ -97,6 +110,53 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('cv_pos_takeout_orders', JSON.stringify(takeoutOrders));
   }, [takeoutOrders]);
+
+  // ─── Socket: escuchar órdenes remotas del celular ────────────────────────
+  useEffect(() => {
+    const handleNuevaOrden = (data: { tableId: string; tableNumber: number; items: OrderItem[] }) => {
+      // 🔔 Sonido de nueva orden
+      playNewOrder();
+
+      // A) Notificar en la caja
+      addNotification(`📱 Nueva orden remota para Mesa ${data.tableNumber}`);
+
+      // B) Actualizar el estado de la mesa: marcarla ocupada e inyectar los platillos
+      setTables(prev => prev.map(t => {
+        if (t.id === data.tableId) {
+          const existingOrder = [...t.currentOrder];
+          data.items.forEach((incoming: OrderItem) => {
+            const idx = existingOrder.findIndex(
+              o => o.menuItem.id === incoming.menuItem.id &&
+                   o.notes === incoming.notes &&
+                   JSON.stringify(o.selectedOptions || []) === JSON.stringify(incoming.selectedOptions || [])
+            );
+            if (idx !== -1) {
+              existingOrder[idx] = { ...existingOrder[idx], quantity: existingOrder[idx].quantity + incoming.quantity };
+            } else {
+              existingOrder.push(incoming);
+            }
+          });
+          return { ...t, status: 'occupied', currentOrder: existingOrder };
+        }
+        return t;
+      }));
+    };
+
+    const handleNuevoCliente = () => {
+      // 🔔 Sonido de mesero conectado
+      playWaiterConnected();
+      addNotification('🧑‍🍳 Un mesero se ha conectado al sistema.');
+    };
+
+    socket.on('nueva_orden_recibida', handleNuevaOrden);
+    socket.on('nuevo_cliente_conectado', handleNuevoCliente);
+
+    return () => {
+      socket.off('nueva_orden_recibida', handleNuevaOrden);
+      socket.off('nuevo_cliente_conectado', handleNuevoCliente);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket]);
 
   // Derived Active Table and Takeout
   const activeTable = tables.find(t => t.id === selectedTableId) || null;
@@ -900,6 +960,7 @@ export default function App() {
                   onAddToOrderDirect={handleAddToOrderDirect}
                   onFreeTable={isTakeout && selectedTakeoutOrderId ? () => handleFreeTakeout(selectedTakeoutOrderId) : handleFreeTable}
                   onCloseMobile={() => setIsMobileCartOpen(false)}
+                  socket={socket}
                 />
               </div>
             </>

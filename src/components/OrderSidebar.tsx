@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Table, OrderItem, MenuItem } from '../types';
 import SplitBillModal from './SplitBillModal';
 import { motion, AnimatePresence } from 'motion/react';
+import type { Socket } from 'socket.io-client';
 import { 
   Trash2, 
   Printer, 
@@ -37,6 +38,8 @@ interface OrderSidebarProps {
   onAddToOrderDirect: (item: MenuItem, quantity: number, notes: string) => void;
   onFreeTable: (tableId: string) => void;
   onCloseMobile?: () => void;
+  /** Instancia del socket para emitir eventos en tiempo real */
+  socket: Socket;
 }
 
 export default function OrderSidebar({
@@ -58,7 +61,8 @@ export default function OrderSidebar({
   menuItems,
   onAddToOrderDirect,
   onFreeTable,
-  onCloseMobile
+  onCloseMobile,
+  socket,
 }: OrderSidebarProps) {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showSplitBill, setShowSplitBill] = useState(false);
@@ -98,6 +102,17 @@ export default function OrderSidebar({
 
   const handleSendComanda = () => {
     if (orderItems.length === 0) return;
+
+    // ─── Emitir la orden por red (Smoke & Mirrors) ──────────────────────
+    if (!isTakeout && activeTable) {
+      socket.emit('enviar_orden', {
+        tableId: activeTable.id,
+        tableNumber: activeTable.number,
+        items: orderItems,
+      });
+    }
+    // ──────────────────────────────────────────────────────────────
+
     onComandaSent();
     setShowComandaAlert(true);
     setTimeout(() => setShowComandaAlert(false), 2000);
