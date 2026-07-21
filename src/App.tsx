@@ -111,48 +111,94 @@ export default function App() {
     localStorage.setItem('cv_pos_takeout_orders', JSON.stringify(takeoutOrders));
   }, [takeoutOrders]);
 
-  // ─── Socket: escuchar órdenes remotas del celular ────────────────────────
+  // ─── Socket: sincronización bidireccional de estado ─────────────────────────
   useEffect(() => {
-    const handleNuevaOrden = (data: { tableId: string; tableNumber: number; items: OrderItem[] }) => {
-      // 🔔 Sonido de nueva orden
-      playNewOrder();
+    // ── sincronizar_mesa ──────────────────────────────────────────────────────
+    // El servidor lo emite a TODOS (incluyendo al que envió).
+    // Reemplaza el estado completo de la mesa — es la fuente de verdad.
+    type SincronizarData = {
+      tableId: string;
+      tableNumber: number;
+      items: OrderItem[];
+      orderNotes: string;
+      senderSocketId: string;
+    };
 
-      // A) Notificar en la caja
-      addNotification(`📱 Nueva orden remota para Mesa ${data.tableNumber}`);
+    const handleSincronizarMesa = (data: SincronizarData) => {
+      const esRemoto = data.senderSocketId !== socket.id;
 
-      // B) Actualizar el estado de la mesa: marcarla ocupada e inyectar los platillos
+      // Sonido y notificación solo en el dispositivo que RECIBE (no en quien envió)
+      if (esRemoto) {
+        playNewOrder();
+        addNotification(`📱 Orden sincronizada — Mesa ${data.tableNumber}`);
+      }
+
+      // Reemplazar orden completa con la del servidor (no fusionar)
       setTables(prev => prev.map(t => {
         if (t.id === data.tableId) {
-          const existingOrder = [...t.currentOrder];
-          data.items.forEach((incoming: OrderItem) => {
-            const idx = existingOrder.findIndex(
-              o => o.menuItem.id === incoming.menuItem.id &&
-                   o.notes === incoming.notes &&
-                   JSON.stringify(o.selectedOptions || []) === JSON.stringify(incoming.selectedOptions || [])
-            );
-            if (idx !== -1) {
-              existingOrder[idx] = { ...existingOrder[idx], quantity: existingOrder[idx].quantity + incoming.quantity };
-            } else {
-              existingOrder.push(incoming);
-            }
-          });
-          return { ...t, status: 'occupied', currentOrder: existingOrder };
+          return {
+            ...t,
+            status: 'occupied',
+            currentOrder: data.items,
+            orderNotes: data.orderNotes ?? t.orderNotes,
+          };
         }
         return t;
       }));
     };
 
+    // ── estado_inicial ────────────────────────────────────────────────────────
+    // El servidor lo envía solo al cliente que se acaba de conectar.
+    // Hidrata todas las mesas que tengan órdenes activas en el servidor.
+    type EstadoInicial = Record<string, {
+      tableId: string;
+      tableNumber: number;
+      items: OrderItem[];
+      orderNotes: string;
+    }>;
+
+    const handleEstadoInicial = (estados: EstadoInicial) => {
+      setTables(prev => {
+        const copia = prev.map(t => ({ ...t }));
+        Object.values(estados).forEach(estado => {
+          const idx = copia.findIndex(t => t.id === estado.tableId);
+          if (idx !== -1 && estado.items.length > 0) {
+            copia[idx] = {
+              ...copia[idx],
+              status: 'occupied',
+              currentOrder: estado.items,
+              orderNotes: estado.orderNotes ?? copia[idx].orderNotes,
+            };
+          }
+        });
+        return copia;
+      });
+    };
+
+    // ── mesa_liberada ─────────────────────────────────────────────────────────
+    const handleMesaLiberada = ({ tableId }: { tableId: string }) => {
+      setTables(prev => prev.map(t =>
+        t.id === tableId
+          ? { ...t, status: 'available', currentOrder: [], orderNotes: '' }
+          : t
+      ));
+    };
+
+    // ── nuevo_cliente_conectado ───────────────────────────────────────────────
     const handleNuevoCliente = () => {
-      // 🔔 Sonido de mesero conectado
       playWaiterConnected();
       addNotification('🧑‍🍳 Un mesero se ha conectado al sistema.');
     };
 
-    socket.on('nueva_orden_recibida', handleNuevaOrden);
+    socket.on('sincronizar_mesa',        handleSincronizarMesa);
+    socket.on('estado_inicial',          handleEstadoInicial);
+    socket.on('mesa_liberada',           handleMesaLiberada);
     socket.on('nuevo_cliente_conectado', handleNuevoCliente);
 
     return () => {
-      socket.off('nueva_orden_recibida', handleNuevaOrden);
+      socket.off('sincronizar_mesa',        handleSincronizarMesa);
+      socket.off('estado_inicial',          handleEstadoInicial);
+      socket.off('mesa_liberada',           handleMesaLiberada);
       socket.off('nuevo_cliente_conectado', handleNuevoCliente);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -210,7 +256,8 @@ export default function App() {
       }
       return t;
     }));
-    // Add real-time notification
+    // Limpiar del estado compartido del servidor
+    socket.emit('liberar_mesa', { tableId });
     addNotification(`Mesa ${tables.find(t => t.id === tableId)?.number} se encuentra limpia y disponible`);
   };
 
@@ -221,6 +268,8 @@ export default function App() {
       }
       return t;
     }));
+    // Limpiar del estado compartido del servidor
+    socket.emit('liberar_mesa', { tableId });
     setSelectedTableId(null);
     changeTab('Mesas');
     addNotification(`Mesa ${tables.find(t => t.id === tableId)?.number} ha sido liberada`);

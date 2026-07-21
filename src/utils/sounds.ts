@@ -59,9 +59,8 @@ export function playWaiterConnected() {
 export function playNewOrder() {
   const ctx = getCtx();
   const now = ctx.currentTime;
-  playTone(880, now,        0.18, 0.30, 'triangle'); // A5
-  playTone(880, now + 0.22, 0.18, 0.28, 'triangle');
-  playTone(880, now + 0.44, 0.35, 0.25, 'triangle');
-  // Nota grave de apoyo para darle cuerpo
-  playTone(440, now + 0.44, 0.5, 0.12, 'sine');
+  playTone(880,    now,        0.15, 0.28, 'triangle'); // A5
+  playTone(1174.7, now + 0.16, 0.15, 0.26, 'triangle'); // D6
+  playTone(1479.98, now + 0.32, 0.30, 0.22, 'triangle'); // F#6
+  playTone(440, now + 0.32, 0.45, 0.10, 'sine'); // apoyo grave
 }

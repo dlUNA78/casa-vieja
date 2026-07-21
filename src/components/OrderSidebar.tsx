@@ -103,15 +103,16 @@ export default function OrderSidebar({
   const handleSendComanda = () => {
     if (orderItems.length === 0) return;
 
-    // ─── Emitir la orden por red (Smoke & Mirrors) ──────────────────────
+    // ─── Sincronizar orden con el servidor (todos los dispositivos) ───────
     if (!isTakeout && activeTable) {
       socket.emit('enviar_orden', {
-        tableId: activeTable.id,
+        tableId:     activeTable.id,
         tableNumber: activeTable.number,
-        items: orderItems,
+        items:       orderItems,
+        orderNotes:  currentNotes,   // incluir notas al cocinero
       });
     }
-    // ──────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────
 
     onComandaSent();
     setShowComandaAlert(true);

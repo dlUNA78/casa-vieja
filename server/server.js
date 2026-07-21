@@ -1,5 +1,5 @@
-// server.js — Puente "Smoke & Mirrors" para el POS Casa Vieja
-// Solo retransmite eventos entre clientes; sin base de datos ni persistencia.
+// server.js — Puente POS Casa Vieja con estado compartido en memoria
+// Sin base de datos. El estado vive mientras el servidor esté corriendo.
 
 import { createServer } from 'http';
 import { Server } from 'socket.io';
@@ -15,24 +15,52 @@ app.get('/health', (_req, res) => res.json({ status: 'ok', ts: new Date().toISOS
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
-  cors: {
-    origin: '*',      // En producción limita esto a tu IP local
-    methods: ['GET', 'POST'],
-  },
+  cors: { origin: '*', methods: ['GET', 'POST'] },
 });
 
-io.on('connection', (socket) => {
-  console.log(`[POS] Cliente conectado: ${socket.id}`);
+// ─── Estado compartido en memoria ────────────────────────────────────────────
+// Clave: tableId  │  Valor: { tableId, tableNumber, items, orderNotes, ts }
+const tableStates = {};
 
-  // Notificar a los demás clientes (la caja) que un mesero se conectó
+io.on('connection', (socket) => {
+  console.log(`[POS] Cliente conectado:    ${socket.id}`);
+
+  // 1. Enviar estado actual al cliente recién conectado (si hay órdenes activas)
+  const activeStates = Object.values(tableStates);
+  if (activeStates.length > 0) {
+    socket.emit('estado_inicial', tableStates);
+    console.log(`[POS] Estado enviado a ${socket.id}: ${activeStates.length} mesa(s) activa(s)`);
+  }
+
+  // 2. Avisar a los demás que hay un nuevo dispositivo conectado
   socket.broadcast.emit('nuevo_cliente_conectado', { socketId: socket.id });
 
-  // El celular (mesero) envía este evento con los datos de la comanda
+  // 3. Recibir comanda de un mesero → guardar y sincronizar a TODOS
   socket.on('enviar_orden', (data) => {
-    console.log(`[POS] Nueva orden recibida de Mesa ${data.tableNumber}:`, data);
+    // Guardar en memoria (reemplaza el estado anterior de esa mesa)
+    tableStates[data.tableId] = {
+      tableId:      data.tableId,
+      tableNumber:  data.tableNumber,
+      items:        data.items,
+      orderNotes:   data.orderNotes || '',
+      senderSocketId: socket.id,
+      ts:           Date.now(),
+    };
 
-    // Retransmitir a TODOS los demás clientes (la caja registradora)
-    socket.broadcast.emit('nueva_orden_recibida', data);
+    console.log(`[POS] ✓ Mesa ${data.tableNumber} sincronizada | ${data.items.length} platillo(s)`);
+
+    // io.emit → incluye al remitente, así TODOS (celular + caja) quedan igual
+    io.emit('sincronizar_mesa', tableStates[data.tableId]);
+  });
+
+  // 4. Cuando una mesa se libera, limpiar su estado del servidor
+  socket.on('liberar_mesa', ({ tableId }) => {
+    if (tableStates[tableId]) {
+      const num = tableStates[tableId].tableNumber;
+      delete tableStates[tableId];
+      io.emit('mesa_liberada', { tableId });
+      console.log(`[POS] Mesa ${num} liberada del estado compartido`);
+    }
   });
 
   socket.on('disconnect', () => {
