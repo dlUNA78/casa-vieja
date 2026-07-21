@@ -59,12 +59,12 @@ export default function FinancialSummary({
       <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-stone-border pb-6">
         <div>
           <p className="text-xs font-bold text-secondary uppercase tracking-widest font-sans">Resumen Financiero</p>
-          <h1 className="text-3xl font-serif font-semibold text-[#4a3f35] mt-1">Corte de Caja - Turno Matutino</h1>
+          <h1 className="text-3xl font-serif font-semibold text-on-surface mt-1">Corte de Caja - Turno Matutino</h1>
         </div>
         <button
           onClick={handlePrint}
           disabled={isPrinting}
-          className="bg-stone-card hover:bg-[#e9e4d5] text-primary border border-primary/20 font-sans text-xs font-bold px-6 py-3.5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 self-start sm:self-auto disabled:opacity-50"
+          className="bg-surface-container-lowest hover:bg-surface-container text-primary border border-primary/20 font-sans text-xs font-bold px-6 py-3.5 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 self-start sm:self-auto disabled:opacity-50"
         >
           {isPrinting ? (
             <>
@@ -83,7 +83,7 @@ export default function FinancialSummary({
       {/* Summary Bento Grid */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Card 1: Sales totals */}
-        <div className="bg-[#f7f3e9] rounded-2xl p-6 border border-stone-border flex flex-col justify-between min-h-[160px] relative overflow-hidden group">
+        <div className="bg-surface-container-lowest rounded-2xl p-6 border border-stone-border flex flex-col justify-between min-h-[160px] relative overflow-hidden group">
           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
             <span className="material-symbols-outlined text-7xl text-primary">point_of_sale</span>
           </div>
@@ -100,7 +100,7 @@ export default function FinancialSummary({
         </div>
 
         {/* Card 2: Cash in safe */}
-        <div className="bg-[#f7f3e9] rounded-2xl p-6 border border-stone-border flex flex-col justify-between min-h-[160px]">
+        <div className="bg-surface-container-lowest rounded-2xl p-6 border border-stone-border flex flex-col justify-between min-h-[160px]">
           <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant font-sans flex items-center gap-1.5">
             <Banknote className="w-4 h-4 text-secondary" />
             <span>Efectivo en Caja</span>
@@ -122,7 +122,7 @@ export default function FinancialSummary({
         </div>
 
         {/* Card 3: Card Sales */}
-        <div className="bg-[#f7f3e9] rounded-2xl p-6 border border-stone-border flex flex-col justify-between min-h-[160px]">
+        <div className="bg-surface-container-lowest rounded-2xl p-6 border border-stone-border flex flex-col justify-between min-h-[160px]">
           <h3 className="text-xs font-bold uppercase tracking-wider text-on-surface-variant font-sans flex items-center gap-1.5">
             <CreditCard className="w-4 h-4 text-primary" />
             <span>Pagos con Terminal (Tarjeta)</span>
@@ -145,9 +145,9 @@ export default function FinancialSummary({
       </section>
 
       {/* Recent Transactions Table */}
-      <section className="bg-[#f7f3e9] rounded-2xl border border-stone-border overflow-hidden">
-        <div className="p-5 border-b border-stone-border bg-[#fbfaee] flex justify-between items-center">
-          <h2 className="font-serif text-lg font-semibold text-[#4a3f35] flex items-center gap-2">
+      <section className="bg-surface-container-lowest rounded-2xl border border-stone-border overflow-hidden">
+        <div className="p-5 border-b border-stone-border bg-surface-container flex justify-between items-center">
+          <h2 className="font-serif text-lg font-semibold text-on-surface flex items-center gap-2">
             <Receipt className="w-5 h-5 text-primary" />
             <span>Transacciones Recientes</span>
           </h2>
@@ -209,7 +209,7 @@ export default function FinancialSummary({
                           ? 'bg-amber-100 text-amber-800 border border-amber-200' 
                           : isBar
                           ? 'bg-blue-100 text-blue-800 border border-blue-200'
-                          : 'bg-secondary-container text-[#5f6732] border border-secondary/20'
+                          : 'bg-secondary-container text-on-secondary-container border border-secondary/20'
                       }`}>
                         <span className="material-symbols-outlined text-[13px]">
                           {isTakeout ? 'local_mall' : 'deck'}
@@ -261,14 +261,14 @@ export default function FinancialSummary({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#fdfcf0] rounded-2xl max-w-sm w-full p-6 border border-stone-border shadow-xl space-y-6 text-center"
+              className="bg-surface-container-lowest rounded-2xl max-w-sm w-full p-6 border border-stone-border shadow-xl space-y-6 text-center"
             >
               <div className="w-14 h-14 bg-secondary/10 text-secondary rounded-full flex items-center justify-center mx-auto border border-secondary/20">
                 <Check className="w-6 h-6 animate-bounce" />
               </div>
 
               <div className="space-y-2">
-                <h3 className="text-2xl font-serif text-[#4a3f35] font-bold">Cierre de Turno Impreso</h3>
+                <h3 className="text-2xl font-serif text-on-surface font-bold">Cierre de Turno Impreso</h3>
                 <p className="text-xs text-on-surface-variant font-sans leading-relaxed">
                   El reporte financiero del turno matutino con folio <span className="font-mono text-primary font-bold">#CR-00134</span> se ha enviado correctamente a la ticketera principal de caja.
                 </p>
@@ -277,7 +277,7 @@ export default function FinancialSummary({
               <div className="border-t border-stone-border/60 pt-4">
                 <button
                   onClick={() => setShowPrintSuccessModal(false)}
-                  className="w-full py-3 bg-secondary hover:bg-[#434b18] text-white rounded-xl text-xs font-semibold font-sans uppercase tracking-wider transition-colors shadow-md"
+                  className="w-full py-3 bg-secondary hover:bg-tertiary text-white rounded-xl text-xs font-semibold font-sans uppercase tracking-wider transition-colors shadow-md"
                 >
                   Aceptar
                 </button>

@@ -80,7 +80,7 @@ export default function ComandasView({ tables, takeoutOrders, onCancelOrder, onC
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-parchment">
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 bg-surface-container-lowest">
         {allActiveOrders.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-70">
             <Utensils className="w-16 h-16 mb-4" />
@@ -95,7 +95,7 @@ export default function ComandasView({ tables, takeoutOrders, onCancelOrder, onC
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-surface-container-lowest rounded-2xl border border-stone-border shadow-sm overflow-hidden flex flex-col"
               >
-                <div className={`p-4 border-b border-stone-border/50 flex justify-between items-start ${order.isTakeout ? 'bg-[#fff8e1]' : 'bg-[#f1f8e9]'}`}>
+                <div className={`p-4 border-b border-stone-border/50 flex justify-between items-start ${order.isTakeout ? 'bg-primary-fixed/20' : 'bg-secondary-container/20'}`}>
                   <div>
                     <h3 className="font-serif font-bold text-lg text-on-surface">{order.identifier}</h3>
                     <div className="flex items-center gap-1.5 text-xs font-sans text-on-surface-variant mt-1">

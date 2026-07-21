@@ -36,6 +36,7 @@ interface OrderSidebarProps {
   menuItems: MenuItem[];
   onAddToOrderDirect: (item: MenuItem, quantity: number, notes: string) => void;
   onFreeTable: (tableId: string) => void;
+  onCloseMobile?: () => void;
 }
 
 export default function OrderSidebar({
@@ -56,7 +57,8 @@ export default function OrderSidebar({
   onPartialCheckoutOrder,
   menuItems,
   onAddToOrderDirect,
-  onFreeTable
+  onFreeTable,
+  onCloseMobile
 }: OrderSidebarProps) {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [showSplitBill, setShowSplitBill] = useState(false);
@@ -145,10 +147,10 @@ export default function OrderSidebar({
     <aside className="w-full lg:w-96 bg-surface-bright border-t lg:border-t-0 lg:border-l border-stone-border flex flex-col h-full shadow-lg relative z-20 shrink-0">
       
       {/* Bill Header */}
-      <div className="p-5 border-b border-stone-border bg-[#fdfcf0]">
+      <div className="p-5 border-b border-stone-border bg-surface-container-lowest">
         <div className="flex justify-between items-start mb-2">
           <div>
-            <span className="inline-block px-3 py-1 rounded-full bg-secondary-container text-[#5f6732] text-[10px] font-bold tracking-wider mb-2 uppercase border border-secondary/20">
+            <span className="inline-block px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-bold tracking-wider mb-2 uppercase border border-secondary/20">
               {isTakeout ? 'Orden para Llevar' : 'Orden Activa'}
             </span>
             <h2 className="font-serif text-2xl text-on-surface font-semibold flex items-center gap-2">
@@ -158,14 +160,25 @@ export default function OrderSidebar({
               <span>{isTakeout ? (takeoutCustomerName ? takeoutCustomerName : 'Para Llevar') : `Mesa ${activeTable?.number || '?'}`}</span>
             </h2>
           </div>
-          <button 
-            onClick={handleClear}
-            disabled={orderItems.length === 0}
-            className="text-on-surface-variant hover:text-red-700 transition-colors p-1.5 hover:bg-stone-card rounded-lg disabled:opacity-45"
-            title="Borrar pedido"
-          >
-            <span className="material-symbols-outlined text-xl">delete_sweep</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleClear}
+              disabled={orderItems.length === 0}
+              className="text-on-surface-variant hover:text-red-700 transition-colors p-1.5 hover:bg-stone-card rounded-lg disabled:opacity-45"
+              title="Borrar pedido"
+            >
+              <span className="material-symbols-outlined text-xl">delete_sweep</span>
+            </button>
+            {onCloseMobile && (
+              <button 
+                onClick={onCloseMobile}
+                className="md:hidden text-on-surface-variant hover:text-primary transition-colors p-1.5 hover:bg-stone-card rounded-lg"
+                title="Minimizar panel"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
+          </div>
         </div>
         
         <div className="flex justify-between text-xs text-on-surface-variant font-sans mt-2 pt-2 border-t border-stone-border/30">
@@ -189,7 +202,7 @@ export default function OrderSidebar({
           return (
             <div 
               key={`${item.menuItem.id}-${index}`} 
-              className="p-4 rounded-xl bg-[#ffffff] border border-stone-border flex flex-col gap-3 shadow-xs hover:border-stone-border-dark transition-colors"
+              className="p-4 rounded-xl bg-surface-container-lowest border border-stone-border flex flex-col gap-3 shadow-xs hover:border-stone-border-dark transition-colors"
             >
               <div className="flex justify-between items-start">
                 <div className="flex-1 pr-4">
@@ -358,7 +371,7 @@ export default function OrderSidebar({
           <button 
             onClick={handleOpenCheckout}
             disabled={orderItems.length === 0}
-            className="col-span-2 py-4 rounded-xl bg-secondary hover:bg-[#434b18] text-white font-sans text-sm font-bold transition-all shadow-md mt-1 flex items-center justify-center gap-2 disabled:opacity-45"
+            className="col-span-2 py-4 rounded-xl bg-secondary hover:bg-tertiary text-white font-sans text-sm font-bold transition-all shadow-md mt-1 flex items-center justify-center gap-2 disabled:opacity-45"
           >
             <CreditCard className="w-4 h-4" />
             <span>Cobrar Orden</span>
@@ -394,10 +407,10 @@ export default function OrderSidebar({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#fdfcf0] rounded-2xl max-w-sm w-full p-6 border border-stone-border shadow-xl space-y-6"
+              className="bg-surface-container-lowest rounded-2xl max-w-sm w-full p-6 border border-stone-border shadow-xl space-y-6"
             >
               <div className="space-y-1">
-                <h3 className="text-2xl font-serif text-[#4a3f35] font-bold">Cobrar Cuenta</h3>
+                <h3 className="text-2xl font-serif text-on-surface font-bold">Cobrar Cuenta</h3>
                 <p className="text-xs text-on-surface-variant font-sans">
                   {isTakeout ? 'Para Llevar' : `Mesa ${activeTable?.number}`} • Selecciona método de pago.
                 </p>
@@ -494,7 +507,7 @@ export default function OrderSidebar({
                 <button
                   onClick={handleConfirmCheckout}
                   disabled={paymentMethod === 'Efectivo' && paidNum < total}
-                  className="flex-1 py-3 bg-secondary hover:bg-[#434b18] text-white rounded-xl text-xs font-semibold font-sans uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-1.5 disabled:opacity-45"
+                  className="flex-1 py-3 bg-secondary hover:bg-tertiary text-white rounded-xl text-xs font-semibold font-sans uppercase tracking-wider transition-colors shadow-md flex items-center justify-center gap-1.5 disabled:opacity-45"
                 >
                   <CheckCircle className="w-4 h-4" />
                   <span>Confirmar</span>
@@ -513,7 +526,7 @@ export default function OrderSidebar({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#fdfcf0] rounded-2xl max-w-sm w-full p-5 border border-stone-border shadow-xl space-y-4"
+              className="bg-surface-container-lowest rounded-2xl max-w-sm w-full p-5 border border-stone-border shadow-xl space-y-4"
             >
               <div className="flex justify-between items-start">
                 <div>

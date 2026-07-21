@@ -5,39 +5,41 @@
   --font-sans: "Work Sans", sans-serif;
   --font-mono: "JetBrains Mono", monospace;
 
-  --color-primary: #a66b27;
-  --color-primary-container: #d99a6c;
-  --color-primary-fixed: #ffdcc3;
-  --color-secondary: #5a632e;
-  --color-secondary-container: #dce5a3;
-  --color-tertiary: #585f40;
+  /* Casa Vieja Minimalist Earthy/Terracotta Theme */
+  --color-primary: #8a3a26;
+  --color-primary-container: #d6afa4;
+  --color-primary-fixed: #e8d7d3;
+  --color-secondary: #5b6658;
+  --color-secondary-container: #d2dbce;
+  --color-tertiary: #5c524c;
   
-  --color-parchment: #fcf8f2;
-  --color-stone-card: #f0ebe1;
-  --color-stone-border: #e0dcd3;
-  --color-stone-dark: #2d2a26;
+  --color-parchment: #fdfdfc;
+  --color-stone-card: #f9f8f6;
+  --color-stone-border: #e8e6e1;
+  --color-stone-dark: #2c2a29;
   
-  --color-surface-dim: #eae6d9;
-  --color-surface-bright: #fcf8f2;
+  --color-surface-dim: #f4f3f0;
+  --color-surface-bright: #ffffff;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f5f4e8;
-  --color-surface-container: #efeee3;
-  --color-surface-container-high: #eae6d9;
-  --color-surface-container-highest: #e0dcd3;
+  --color-surface-container-low: #fdfdfc;
+  --color-surface-container: #f9f8f6;
+  --color-surface-container-high: #f4f3f0;
+  --color-surface-container-highest: #e8e6e1;
   
-  --color-on-surface: #1b1c15;
-  --color-on-surface-variant: #554336;
+  --color-on-surface: #2c2a29;
+  --color-on-surface-variant: #6b6661;
 }
 
 @layer base {
   body {
     font-family: var(--font-sans);
-    background-color: var(--color-parchment);
+    background-color: var(--color-surface-container-lowest);
     color: var(--color-on-surface);
   }
   
   h1, h2, h3, h4, .font-serif-header {
     font-family: var(--font-serif);
+    letter-spacing: -0.02em;
   }
 }
 

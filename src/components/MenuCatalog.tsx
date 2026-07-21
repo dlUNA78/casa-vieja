@@ -130,7 +130,7 @@ export default function MenuCatalog({
             className={`px-6 py-2.5 rounded-full font-sans text-xs font-semibold tracking-wide whitespace-nowrap transition-all border ${
               selectedCategory === cat 
                 ? 'bg-secondary-container text-on-secondary-container border-secondary font-bold shadow-sm' 
-                : 'bg-stone-card hover:bg-[#e9e4d5] text-on-surface-variant border-stone-border/50'
+                : 'bg-stone-card hover:bg-surface-container-highest text-on-surface-variant border-stone-border/50'
             }`}
           >
             {cat}
@@ -152,7 +152,7 @@ export default function MenuCatalog({
 
       {/* Products Grid */}
       <div className="flex-1 overflow-y-auto scrollbar-hide pb-24">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4 md:gap-6">
           {filteredItems.map(item => {
             
             const defaultImages: Record<string, string> = {
@@ -171,12 +171,12 @@ export default function MenuCatalog({
               <motion.div
                 key={item.id}
                 whileHover={{ y: -4, shadow: '0 8px 30px rgba(144, 77, 0, 0.08)' }}
-                className="bg-[#f7f3e9] rounded-2xl border border-stone-border overflow-hidden cursor-pointer hover:shadow-md transition-all group relative flex flex-col justify-between"
+                className="bg-surface-container-lowest rounded-2xl border border-stone-border overflow-hidden cursor-pointer hover:shadow-md transition-all group relative flex flex-col justify-between"
                 onClick={(e) => handleQuickAdd(item, e)}
               >
                 {/* Visual Section */}
                 {hasImg ? (
-                  <div className="h-40 w-full bg-surface-container-highest relative overflow-hidden">
+                  <div className="h-32 md:h-40 w-full bg-surface-container-highest relative overflow-hidden">
                     <img 
                       src={itemImage} 
                       alt={item.name} 
@@ -184,7 +184,7 @@ export default function MenuCatalog({
                       referrerPolicy="no-referrer"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
-                    <span className="absolute bottom-3 right-3 text-[#fbfaee] font-serif text-xl font-bold bg-primary/80 px-3 py-1 rounded-lg backdrop-blur-xs">
+                    <span className="absolute bottom-2 md:bottom-3 right-2 md:right-3 text-[#fbfaee] font-serif text-lg md:text-xl font-bold bg-primary/80 px-2 md:px-3 py-1 rounded-lg backdrop-blur-xs">
                       ${item.price}
                     </span>
                     <span className="absolute top-3 left-3 text-[10px] text-white/90 bg-secondary/85 font-sans font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
@@ -266,7 +266,7 @@ export default function MenuCatalog({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#fdfcf0] rounded-2xl max-w-lg w-full p-6 border border-stone-border shadow-xl flex flex-col max-h-[90vh]"
+              className="bg-surface-container-lowest rounded-2xl max-w-lg w-full p-6 border border-stone-border shadow-xl flex flex-col max-h-[90vh]"
             >
               {/* Header */}
               <div className="flex justify-between items-start shrink-0 pb-4 border-b border-stone-border/60">

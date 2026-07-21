@@ -44,7 +44,7 @@ export default function HistoryLog({
       
       {/* Page Header */}
       <div className="border-b border-stone-border pb-6">
-        <h2 className="text-3xl font-serif text-[#4a3f35] font-semibold tracking-tight">Historial de Ventas</h2>
+        <h2 className="text-3xl font-serif text-on-surface font-semibold tracking-tight">Historial de Ventas</h2>
         <p className="text-sm text-on-surface-variant font-sans mt-1">
           Consulte, reimprima o anule las transacciones realizadas durante la jornada activa.
         </p>
@@ -72,7 +72,7 @@ export default function HistoryLog({
         {filtered.map(tx => (
           <div 
             key={tx.id}
-            className="bg-[#f7f3e9] rounded-xl p-4 border border-stone-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs"
+            className="bg-surface-container-lowest rounded-xl p-4 border border-stone-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-xs"
           >
             <div className="flex items-start sm:items-center gap-4">
               <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-primary border border-stone-border/50 shrink-0">
@@ -81,7 +81,7 @@ export default function HistoryLog({
               <div className="space-y-0.5">
                 <div className="flex items-center gap-2">
                   <span className="font-mono text-xs font-bold text-primary">{tx.folio}</span>
-                  <span className="text-[10px] font-sans font-bold bg-secondary-container text-[#5f6732] px-2 py-0.5 rounded-full uppercase tracking-wider">
+                  <span className="text-[10px] font-sans font-bold bg-secondary-container text-on-secondary-container px-2 py-0.5 rounded-full uppercase tracking-wider">
                     {tx.type}
                   </span>
                 </div>
@@ -96,7 +96,7 @@ export default function HistoryLog({
             <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 pt-3 sm:pt-0 border-stone-border/40">
               <div className="text-right">
                 <p className="text-xs text-on-surface-variant font-sans">Monto cobrado</p>
-                <p className="text-lg font-serif font-bold text-[#4a3f35]">${tx.total.toFixed(2)}</p>
+                <p className="text-lg font-serif font-bold text-on-surface">${tx.total.toFixed(2)}</p>
               </div>
 
               <div className="flex gap-2">

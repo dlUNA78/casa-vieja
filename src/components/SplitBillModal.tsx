@@ -233,9 +233,9 @@ export default function SplitBillModal({ orderItems, title, onClose, onPartialCh
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex bg-[#fdfcf0]">
+    <div className="fixed inset-0 z-50 flex bg-surface-container-lowest">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 h-16 border-b border-stone-border/50 bg-[#fdfcf0] flex items-center justify-between px-6 z-10">
+      <div className="absolute top-0 left-0 right-0 h-16 border-b border-stone-border/50 bg-surface-container-lowest flex items-center justify-between px-6 z-10">
         <div>
           <h2 className="font-serif text-2xl font-bold text-primary">División de Cuenta - {title}</h2>
           <p className="text-sm font-sans text-on-surface-variant">Arrastre los artículos a nuevas subcuentas para dividir el cobro.</p>
@@ -277,7 +277,7 @@ export default function SplitBillModal({ orderItems, title, onClose, onPartialCh
           return (
             <div 
               key={sub.id}
-              className="w-72 shrink-0 bg-[#fdfcf0] rounded-2xl border border-stone-border/60 flex flex-col h-full max-h-[800px] shadow-sm relative group"
+              className="w-72 shrink-0 bg-surface-container-lowest rounded-2xl border border-stone-border/60 flex flex-col h-full max-h-[800px] shadow-sm relative group"
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, sub.id)}
             >
@@ -288,7 +288,7 @@ export default function SplitBillModal({ orderItems, title, onClose, onPartialCh
                 </button>
               </div>
               
-              <div className="p-4 flex-1 overflow-y-auto bg-[#fbfaf0]">
+              <div className="p-4 flex-1 overflow-y-auto bg-surface-container">
                 {sub.items.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-on-surface-variant/50 text-sm border-2 border-dashed border-stone-border/50 rounded-xl bg-surface-container-lowest/50">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mb-2 opacity-50"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -338,7 +338,7 @@ export default function SplitBillModal({ orderItems, title, onClose, onPartialCh
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-[#2d2a26]/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-stone-dark/40 backdrop-blur-sm"
               onClick={() => !checkoutSuccess && setCheckoutSubAccountId(null)}
             />
             
@@ -409,7 +409,7 @@ export default function SplitBillModal({ orderItems, title, onClose, onPartialCh
                       </div>
                       
                       {parseFloat(cashAmountPaid) >= calculateTotal(subAccounts.find(s => s.id === checkoutSubAccountId)?.items || []) && (
-                        <div className="mt-3 bg-[#e8f5e9] text-[#2e7d32] p-3 rounded-xl flex items-center justify-between">
+                        <div className="mt-3 bg-secondary-container/50 text-green-700 p-3 rounded-xl flex items-center justify-between">
                           <span className="font-sans font-bold text-sm">Cambio a entregar:</span>
                           <span className="font-serif font-bold text-lg">
                             ${(parseFloat(cashAmountPaid) - calculateTotal(subAccounts.find(s => s.id === checkoutSubAccountId)?.items || [])).toFixed(2)}
@@ -433,8 +433,8 @@ export default function SplitBillModal({ orderItems, title, onClose, onPartialCh
                 </>
               ) : (
                 <div className="py-8 flex flex-col items-center justify-center text-center animate-in zoom-in duration-300">
-                  <div className="w-20 h-20 bg-[#e8f5e9] rounded-full flex items-center justify-center mb-6">
-                    <CheckCircle className="w-10 h-10 text-[#2e7d32]" />
+                  <div className="w-20 h-20 bg-secondary-container/50 rounded-full flex items-center justify-center mb-6">
+                    <CheckCircle className="w-10 h-10 text-green-700" />
                   </div>
                   <h3 className="font-serif text-3xl font-bold text-on-surface mb-2">¡Pago Exitoso!</h3>
                   <p className="font-sans text-on-surface-variant">La subcuenta ha sido procesada.</p>

@@ -108,7 +108,7 @@ export default function SettingsPanel({
       
       {/* Header */}
       <div className="border-b border-stone-border pb-6">
-        <h2 className="text-3xl font-serif text-[#4a3f35] font-semibold tracking-tight">Panel de Configuración</h2>
+        <h2 className="text-3xl font-serif text-on-surface font-semibold tracking-tight">Panel de Configuración</h2>
         <p className="text-sm text-on-surface-variant font-sans mt-1">
           Administre el catálogo de platillos del restaurante, la disposición de mesas del salón y las configuraciones del sistema.
         </p>
@@ -117,7 +117,7 @@ export default function SettingsPanel({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* Section 1: Add Dish */}
-        <section className="bg-[#f7f3e9] p-6 rounded-2xl border border-stone-border space-y-6">
+        <section className="bg-surface-container-lowest p-6 rounded-2xl border border-stone-border space-y-6">
           <div className="space-y-1">
             <h3 className="text-xl font-serif text-on-surface font-semibold flex items-center gap-2">
               <UtensilsCrossed className="w-5 h-5 text-primary" />
@@ -214,7 +214,7 @@ export default function SettingsPanel({
         </section>
 
         {/* Section 2: Manage Tables */}
-        <section className="bg-[#f7f3e9] p-6 rounded-2xl border border-stone-border space-y-6 flex flex-col justify-between">
+        <section className="bg-surface-container-lowest p-6 rounded-2xl border border-stone-border space-y-6 flex flex-col justify-between">
           <div>
             <div className="space-y-1 mb-4">
               <h3 className="text-xl font-serif text-on-surface font-semibold flex items-center gap-2">
@@ -238,7 +238,7 @@ export default function SettingsPanel({
                   />
                   <button
                     type="submit"
-                    className="bg-secondary hover:bg-[#434b18] text-white text-xs font-bold font-sans uppercase tracking-wider px-6 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="bg-secondary hover:bg-tertiary text-white text-xs font-bold font-sans uppercase tracking-wider px-6 rounded-xl transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Habilitar Mesa</span>
@@ -264,7 +264,7 @@ export default function SettingsPanel({
 
           <div className="border-t border-stone-border/60 pt-6 mt-6 space-y-4">
             <div className="space-y-1">
-              <h4 className="text-sm font-serif font-bold text-[#4a3f35] flex items-center gap-2">
+              <h4 className="text-sm font-serif font-bold text-on-surface flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-primary" />
                 <span>Acciones del Sistema</span>
               </h4>
@@ -285,7 +285,7 @@ export default function SettingsPanel({
 
       {/* Catalog listing removal overview */}
       <section className="bg-stone-card/30 p-6 rounded-2xl border border-stone-border/60 space-y-4">
-        <h3 className="text-lg font-serif text-[#4a3f35] font-semibold">Resumen de Platillos ({menuItems.length})</h3>
+        <h3 className="text-lg font-serif text-on-surface font-semibold">Resumen de Platillos ({menuItems.length})</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-60 overflow-y-auto scrollbar-hide">
           {menuItems.map(item => (
             <div 

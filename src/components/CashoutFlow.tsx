@@ -186,12 +186,12 @@ export default function CashoutFlow({ expectedCash, transactions = [], onConfirm
                 <span className="text-xs text-on-surface-variant mt-2">Arqueo físico</span>
               </div>
 
-              <div className={`p-6 rounded-2xl border shadow-sm flex flex-col items-center justify-center text-center ${isMatch ? 'bg-[#e8f5e9] border-[#a5d6a7]' : difference > 0 ? 'bg-[#e3f2fd] border-[#90caf9]' : 'bg-[#ffebee] border-[#ef9a9a]'}`}>
-                <span className={`font-bold text-sm uppercase tracking-wider mb-2 ${isMatch ? 'text-[#2e7d32]' : difference > 0 ? 'text-[#1565c0]' : 'text-[#c62828]'}`}>Diferencia</span>
-                <span className={`text-4xl font-bold ${isMatch ? 'text-[#2e7d32]' : difference > 0 ? 'text-[#1565c0]' : 'text-[#c62828]'}`}>
+              <div className={`p-6 rounded-2xl border shadow-sm flex flex-col items-center justify-center text-center ${isMatch ? 'bg-secondary-container/30 border-secondary/50' : difference > 0 ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
+                <span className={`font-bold text-sm uppercase tracking-wider mb-2 ${isMatch ? 'text-green-700' : difference > 0 ? 'text-blue-700' : 'text-red-700'}`}>Diferencia</span>
+                <span className={`text-4xl font-bold ${isMatch ? 'text-green-700' : difference > 0 ? 'text-blue-700' : 'text-red-700'}`}>
                   {difference > 0 ? '+' : ''}{difference.toFixed(2)}
                 </span>
-                <span className={`text-xs font-bold mt-2 flex items-center gap-1 ${isMatch ? 'text-[#2e7d32]' : difference > 0 ? 'text-[#1565c0]' : 'text-[#c62828]'}`}>
+                <span className={`text-xs font-bold mt-2 flex items-center gap-1 ${isMatch ? 'text-green-700' : difference > 0 ? 'text-blue-700' : 'text-red-700'}`}>
                   {isMatch ? (
                     <><CheckCircle className="w-4 h-4"/> Cuadre Perfecto</>
                   ) : difference > 0 ? (
@@ -213,7 +213,7 @@ export default function CashoutFlow({ expectedCash, transactions = [], onConfirm
               </button>
               <button
                 onClick={handlePrintAndConfirm}
-                className="bg-secondary hover:bg-[#434b18] text-white font-bold py-3 px-8 rounded-xl flex items-center gap-2 transition-colors shadow-md"
+                className="bg-secondary hover:bg-tertiary text-white font-bold py-3 px-8 rounded-xl flex items-center gap-2 transition-colors shadow-md"
               >
                 <Printer className="w-5 h-5" />
                 <span>Cerrar Turno e Imprimir Ticket</span>

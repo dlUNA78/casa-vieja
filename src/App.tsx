@@ -25,7 +25,8 @@ import {
   LogOut,
   Sparkles,
   Award,
-  ArrowLeft
+  ArrowLeft,
+  ShoppingBag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -56,6 +57,7 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<string>('Mesas');
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [isSidebarMinimized, setIsSidebarMinimized] = useState(false);
   
   const toggleMenu = (menu: string) => {
     setOpenMenu(prev => prev === menu ? null : menu);
@@ -69,7 +71,7 @@ export default function App() {
   const [pendingAddOrderItem, setPendingAddOrderItem] = useState<{item: MenuItem, quantity: number, notes: string, selectedOptions?: OrderOption[]} | null>(null);
   const [newTakeoutName, setNewTakeoutName] = useState('');
 
-  // UI States
+  const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
   const [showNotificationPopup, setShowNotificationPopup] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -591,7 +593,7 @@ export default function App() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex bg-parchment text-[#1b1c15] font-sans">
+    <div className="h-screen w-screen overflow-hidden flex bg-surface-container-lowest text-on-surface font-sans">
       
       {/* SideNavBar matching image 5 style perfectly */}
       <Sidebar 
@@ -607,13 +609,15 @@ export default function App() {
         }} 
         openMenu={openMenu} 
         onToggleMenu={toggleMenu} 
+        isMinimized={isSidebarMinimized}
+        onToggleMinimize={() => setIsSidebarMinimized(!isSidebarMinimized)}
       />
 
       {/* Main Content Wrapper */}
-      <div className="flex-1 flex flex-col md:pl-64 h-full relative overflow-hidden">
+      <div className={`flex-1 flex flex-col ${isSidebarMinimized ? 'md:pl-20' : 'md:pl-64'} transition-all duration-300 h-full relative overflow-hidden`}>
         
         {/* TopNavBar matching image layout perfectly */}
-        <header className="fixed top-0 right-0 left-0 md:left-64 h-16 z-40 flex justify-between items-center px-6 bg-surface-dim text-primary">
+        <header className={`fixed top-0 right-0 left-0 ${isSidebarMinimized ? 'md:left-20' : 'md:left-64'} transition-all duration-300 h-16 z-40 flex justify-between items-center px-6 bg-surface-container-lowest border-b border-stone-border/60 text-primary`}>
           
           <div className="flex items-center gap-3">
             {/* Hamburger menu for mobile only */}
@@ -638,7 +642,7 @@ export default function App() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={activeTab === 'Mesas' ? "Buscar mesa o plato..." : "Buscar platillo..."} 
-                className="pl-9 pr-4 py-2.5 rounded-xl bg-surface-container-lowest border-none focus:ring-1 focus:ring-primary text-xs font-sans w-48 lg:w-64 transition-all placeholder:text-on-surface-variant/45 shadow-sm text-on-surface"
+                className="pl-9 pr-4 py-2.5 rounded-xl bg-surface-container border-none focus:ring-1 focus:ring-primary text-xs font-sans w-48 lg:w-64 transition-all placeholder:text-on-surface-variant/45 shadow-sm text-on-surface"
               />
             </div>
             
@@ -662,7 +666,7 @@ export default function App() {
                       initial={{ opacity: 0, y: 15 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 15 }}
-                      className="absolute right-0 mt-2 w-72 bg-[#fdfcf0] border border-stone-border rounded-2xl shadow-xl p-4 z-50 space-y-3"
+                      className="absolute right-0 mt-2 w-72 bg-surface-container-lowest border border-stone-border rounded-2xl shadow-xl p-4 z-50 space-y-3"
                     >
                       <h4 className="font-serif text-sm font-bold text-on-surface flex items-center justify-between border-b border-stone-border/40 pb-2">
                         <span>Notificaciones Recientes</span>
@@ -702,7 +706,7 @@ export default function App() {
                 initial={{ x: -280 }}
                 animate={{ x: 0 }}
                 exit={{ x: -280 }}
-                className="relative flex flex-col w-64 max-w-xs bg-[#fdfcf0] h-full p-5 border-r border-stone-border space-y-6"
+                className="relative flex flex-col w-64 max-w-xs bg-surface-container-low h-full p-5 border-r border-stone-border space-y-6"
               >
                 <div className="absolute top-4 right-4 z-50">
                   <button onClick={() => setMobileMenuOpen(false)} className="p-1 rounded-lg text-on-surface-variant hover:bg-stone-card">
@@ -731,7 +735,7 @@ export default function App() {
         </AnimatePresence>
 
         {/* Main Workspace Stage */}
-        <main className="flex-1 mt-16 flex flex-col lg:flex-row overflow-hidden relative z-10">
+        <main className="flex-1 mt-16 flex flex-col md:flex-row overflow-hidden relative z-10">
           
           {/* Active Router Tab workspace panel */}
           <div className="flex-1 flex flex-col overflow-y-auto scrollbar-hide relative min-w-0">
@@ -787,7 +791,7 @@ export default function App() {
 
 
             {activeTab === 'PuntoDeVenta' && (
-              <div className="flex flex-col flex-1 h-full min-h-0">
+              <div className="flex flex-col flex-1 h-full min-h-0 relative">
                 {(selectedTableId || selectedTakeoutOrderId) && (
                   <div className="px-6 md:px-8 pt-6 pb-0 shrink-0">
                     <button 
@@ -804,6 +808,24 @@ export default function App() {
                   onAddToOrder={handleAddToOrder}
                   activeSearchQuery={searchQuery}
                 />
+                
+                {/* Floating Mobile Cart Button */}
+                {(selectedTableId || selectedTakeoutOrderId) && !isMobileCartOpen && (
+                  <div className="md:hidden absolute bottom-10 left-6 right-6 z-30">
+                    <button 
+                      onClick={() => setIsMobileCartOpen(true)}
+                      className="w-full bg-primary hover:bg-primary-dark text-white shadow-xl py-4 rounded-2xl font-sans font-bold flex items-center justify-between px-6 border border-primary-dark/20"
+                    >
+                      <div className="flex items-center gap-2">
+                        <ShoppingBag className="w-5 h-5" />
+                        <span>Ver Orden</span>
+                      </div>
+                      <div className="bg-white/20 px-3 py-1 rounded-full text-xs">
+                        {isTakeout ? 'Para Llevar' : `Mesa ${activeTable?.number || '?'}`}
+                      </div>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -848,26 +870,39 @@ export default function App() {
 
           {/* Persistent Active Ticket Bill sidebar inside POS screen */}
           {activeTab === 'PuntoDeVenta' && (activeTable || (isTakeout && activeTakeout)) && (
-            <OrderSidebar 
-              activeTable={activeTable}
-              isTakeout={isTakeout}
-              takeoutCustomerName={activeTakeout?.customerName || ''}
-              takeoutOrder={activeTakeout?.currentOrder || []}
-              takeoutNotes={activeTakeout?.orderNotes || ''}
-              takeoutAddress={activeTakeout?.address || ''}
-              onUpdateTakeoutAddress={handleUpdateTakeoutAddress}
-              onUpdateTakeoutNotes={handleUpdateTakeoutNotes}
-              onUpdateTableNotes={handleUpdateTableNotes}
-              onClearOrder={handleClearOrder}
-              onUpdateQuantity={handleUpdateQuantity}
-              onComandaSent={handleComandaSent}
-              onSaveOrder={handleSaveOrder}
-              onCheckoutOrder={handleCheckoutOrder}
-              onPartialCheckoutOrder={handlePartialCheckoutOrder}
-              menuItems={menuItems}
-              onAddToOrderDirect={handleAddToOrderDirect}
-              onFreeTable={isTakeout && selectedTakeoutOrderId ? () => handleFreeTakeout(selectedTakeoutOrderId) : handleFreeTable}
-            />
+            <>
+              {/* Mobile overlay background */}
+              {isMobileCartOpen && (
+                <div 
+                  className="fixed inset-0 bg-stone-dark/40 z-40 md:hidden backdrop-blur-sm"
+                  onClick={() => setIsMobileCartOpen(false)}
+                />
+              )}
+              
+              <div className={`fixed top-16 right-0 bottom-8 z-50 md:static md:z-auto ${isMobileCartOpen ? 'flex' : 'hidden md:flex'} w-full md:w-80 lg:w-96 bg-surface-container-lowest border-l border-stone-border/60 shadow-2xl md:shadow-none flex-col shrink-0 transition-transform duration-300`}>
+                <OrderSidebar 
+                  activeTable={activeTable}
+                  isTakeout={isTakeout}
+                  takeoutCustomerName={activeTakeout?.customerName || ''}
+                  takeoutOrder={activeTakeout?.currentOrder || []}
+                  takeoutNotes={activeTakeout?.orderNotes || ''}
+                  takeoutAddress={activeTakeout?.address || ''}
+                  onUpdateTakeoutAddress={handleUpdateTakeoutAddress}
+                  onUpdateTakeoutNotes={handleUpdateTakeoutNotes}
+                  onUpdateTableNotes={handleUpdateTableNotes}
+                  onClearOrder={handleClearOrder}
+                  onUpdateQuantity={handleUpdateQuantity}
+                  onComandaSent={handleComandaSent}
+                  onSaveOrder={handleSaveOrder}
+                  onCheckoutOrder={handleCheckoutOrder}
+                  onPartialCheckoutOrder={handlePartialCheckoutOrder}
+                  menuItems={menuItems}
+                  onAddToOrderDirect={handleAddToOrderDirect}
+                  onFreeTable={isTakeout && selectedTakeoutOrderId ? () => handleFreeTakeout(selectedTakeoutOrderId) : handleFreeTable}
+                  onCloseMobile={() => setIsMobileCartOpen(false)}
+                />
+              </div>
+            </>
           )}
 
         </main>
@@ -879,14 +914,14 @@ export default function App() {
               initial={{ opacity: 0, y: 50, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 50, scale: 0.95 }}
-              className="fixed bottom-12 right-6 bg-[#2d2a26] text-[#fbfaee] py-3.5 px-5 rounded-2xl shadow-xl border border-stone-border/20 z-50 flex items-center gap-3 max-w-sm"
+              className="fixed bottom-12 right-6 bg-stone-dark text-surface-container-lowest py-3.5 px-5 rounded-2xl shadow-xl border border-stone-border/20 z-50 flex items-center gap-3 max-w-sm"
             >
               <div className="w-7 h-7 bg-primary rounded-full flex items-center justify-center border border-primary/25 shadow-xs shrink-0 text-white">
                 <Sparkles className="w-4 h-4 animate-spin" />
               </div>
               <div className="text-xs font-sans space-y-0.5">
                 <p className="font-bold text-white tracking-wide">Notificación del POS</p>
-                <p className="text-[#e4e3d7] leading-relaxed">{notifications[0]}</p>
+                <p className="text-surface-container-high leading-relaxed">{notifications[0]}</p>
               </div>
               <button 
                 onClick={() => setShowNotificationPopup(false)}
@@ -906,10 +941,10 @@ export default function App() {
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="bg-[#fdfcf0] rounded-2xl max-w-lg w-full p-6 border border-stone-border shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto"
+                className="bg-surface-container-lowest rounded-2xl max-w-lg w-full p-6 border border-stone-border shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto"
               >
                 <div className="flex justify-between items-center border-b border-stone-border/40 pb-3">
-                  <h3 className="text-xl font-serif text-[#4a3f35] font-bold">Asignar Producto</h3>
+                  <h3 className="text-xl font-serif text-on-surface font-bold">Asignar Producto</h3>
                   <button onClick={() => { setPendingAddOrderItem(null); setNewTakeoutName(''); }} className="p-1 rounded-lg text-on-surface-variant hover:bg-stone-card">
                     <X className="w-5 h-5" />
                   </button>
@@ -1093,7 +1128,7 @@ export default function App() {
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
-                className="bg-[#fdfcf0] rounded-2xl max-w-sm w-full p-6 border border-stone-border shadow-2xl text-center space-y-5"
+                className="bg-surface-container-lowest rounded-2xl max-w-sm w-full p-6 border border-stone-border shadow-2xl text-center space-y-5"
               >
                 <div className="relative w-24 h-24 mx-auto">
                   <div className="w-24 h-24 rounded-full bg-surface-variant overflow-hidden border-2 border-primary shadow-md">
@@ -1110,7 +1145,7 @@ export default function App() {
                 </div>
 
                 <div className="space-y-1">
-                  <h3 className="text-xl font-serif text-[#4a3f35] font-bold">Sofía Torres</h3>
+                  <h3 className="text-xl font-serif text-on-surface font-bold">Sofía Torres</h3>
                   <p className="text-xs text-on-surface-variant font-sans uppercase tracking-widest font-semibold">Cajera Principal</p>
                   <p className="text-[10px] text-secondary font-mono">Turno Matutino • Casa Vieja Centro</p>
                 </div>
@@ -1143,7 +1178,7 @@ export default function App() {
         </AnimatePresence>
 
         {/* Minimal Editorial Footer matching guidelines perfectly */}
-        <footer className="fixed bottom-0 left-0 md:left-24 right-0 h-8 flex items-center justify-between px-6 z-30 bg-parchment text-[11px] font-sans text-on-surface-variant">
+        <footer className={`fixed bottom-0 right-0 left-0 ${isSidebarMinimized ? 'md:left-20' : 'md:left-64'} transition-all duration-300 h-8 flex items-center justify-between px-6 z-30 bg-surface-container-lowest text-[11px] font-sans text-on-surface-variant`}>
           <p>© 2024 Casa Vieja - Sistema de Punto de Venta Artesanal</p>
           <div className="flex gap-4">
             <a href="#soporte" onClick={(e) => { e.preventDefault(); alert('Conectando con soporte de Casa Vieja...'); }} className="hover:text-primary transition-colors">Soporte</a>

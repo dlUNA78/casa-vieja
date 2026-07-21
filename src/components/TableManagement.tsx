@@ -83,14 +83,14 @@ export default function TableManagement({
       {/* Page Header & Quick Actions */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-stone-border pb-6">
         <div>
-          <h2 className="text-3xl font-serif text-[#4a3f35] font-semibold tracking-tight">Gestión de Pedidos</h2>
+          <h2 className="text-3xl font-serif text-on-surface font-semibold tracking-tight">Gestión de Pedidos</h2>
           <p className="text-sm text-on-surface-variant font-sans mt-1">
             Seleccione una mesa para tomar orden o gestionar ocupación, y gestione pedidos para llevar.
           </p>
         </div>
         <button 
           onClick={() => setShowTakeoutModal(true)}
-          className="flex items-center gap-2 bg-surface-dim hover:bg-[#d9d5c8] text-primary font-sans text-sm font-bold px-5 py-3 rounded-lg transition-all shadow-sm active:scale-95 uppercase"
+          className="flex items-center gap-2 bg-surface-container hover:bg-surface-container-highest text-primary font-sans text-sm font-bold px-5 py-3 rounded-lg transition-all shadow-sm active:scale-95 uppercase"
         >
           <ShoppingBag className="w-5 h-5" />
           <span>PARA LLEVAR</span>
@@ -136,7 +136,7 @@ export default function TableManagement({
         {/* Available & Dirty section */}
         {(availableTables.length > 0 || dirtyTables.length > 0) && (
           <section className="space-y-4">
-            <h3 className="text-xl font-serif text-[#4a3f35] font-semibold border-l-[3px] border-primary pl-3 flex items-center gap-2">
+            <h3 className="text-xl font-serif text-on-surface font-semibold border-l-[3px] border-primary pl-3 flex items-center gap-2">
               <span>Mesas disponibles</span>
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
@@ -149,7 +149,7 @@ export default function TableManagement({
                     whileTap={{ scale: 0.98 }}
                     onClick={() => isDirty ? onCleanTable(table.id) : handleOpenAssign(table)}
                     className={`rounded-lg p-5 border flex flex-col justify-between h-40 relative cursor-pointer shadow-sm transition-colors group ${
-                      isDirty ? 'bg-red-50/50 hover:bg-red-50 border-red-200' : 'bg-parchment hover:bg-[#f5f1e8] border-stone-border'
+                      isDirty ? 'bg-red-50/50 hover:bg-red-50 border-red-200' : 'bg-surface-container-lowest hover:bg-surface-container border-stone-border'
                     }`}
                   >
                     <div className={`absolute top-4 right-4 w-2.5 h-2.5 rounded-full shadow-sm ${
@@ -181,7 +181,7 @@ export default function TableManagement({
         {/* Occupied section */}
         {occupiedTables.length > 0 && (
           <section className="space-y-4">
-            <h3 className="text-xl font-serif text-[#4a3f35] font-semibold border-l-[3px] border-primary pl-3 flex items-center gap-2">
+            <h3 className="text-xl font-serif text-on-surface font-semibold border-l-[3px] border-primary pl-3 flex items-center gap-2">
               <span>Mesas Ocupadas</span>
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
@@ -236,7 +236,7 @@ export default function TableManagement({
         {/* Pending Takeout section */}
         {pendingTakeoutOrders.length > 0 && (
           <section className="space-y-4">
-            <h3 className="text-xl font-serif text-[#4a3f35] font-semibold border-l-[3px] border-primary pl-3 flex items-center gap-2">
+            <h3 className="text-xl font-serif text-on-surface font-semibold border-l-[3px] border-primary pl-3 flex items-center gap-2">
               <span>Pedidos Pendientes o Para Llevar</span>
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
@@ -306,10 +306,10 @@ export default function TableManagement({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#fdfcf0] rounded-2xl max-w-sm w-full p-6 border border-stone-border shadow-xl space-y-6"
+              className="bg-surface-container-lowest rounded-2xl max-w-sm w-full p-6 border border-stone-border shadow-xl space-y-6"
             >
               <div className="space-y-2">
-                <h3 className="text-2xl font-serif text-[#4a3f35] font-semibold flex items-center gap-2">
+                <h3 className="text-2xl font-serif text-on-surface font-semibold flex items-center gap-2">
                   <UtensilsCrossed className="w-5 h-5 text-primary" />
                   <span>Mesa {selectedAssignTable.number}</span>
                 </h3>
@@ -365,7 +365,7 @@ export default function TableManagement({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#fdfcf0] rounded-2xl max-w-sm w-full p-6 border border-stone-border shadow-xl space-y-6 relative"
+              className="bg-surface-container-lowest rounded-2xl max-w-sm w-full p-6 border border-stone-border shadow-xl space-y-6 relative"
             >
               <button 
                 onClick={() => { setShowTakeoutModal(false); setCustomerName(''); }}
@@ -375,7 +375,7 @@ export default function TableManagement({
               </button>
               
               <div className="space-y-2">
-                <h3 className="text-2xl font-serif text-[#4a3f35] font-semibold flex items-center gap-2">
+                <h3 className="text-2xl font-serif text-on-surface font-semibold flex items-center gap-2">
                   <ShoppingBag className="w-5 h-5 text-primary" />
                   <span>Pedido Para Llevar</span>
                 </h3>
