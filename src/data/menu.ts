@@ -22,6 +22,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Verdes o rojos',
     price: 65, // Base sencillos
     category: 'Desayunos',
+    image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500&q=80',
     optionGroups: [
       {
         name: 'Salsa',
@@ -59,6 +60,7 @@ export const menuItemsData: MenuItem[] = [
     description: '',
     price: 70, // Sencillas
     category: 'Desayunos',
+    image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500&q=80',
     optionGroups: [
       {
         name: 'Orden',
@@ -87,6 +89,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Jamón, tocino, salchicha o chorizo',
     price: 75,
     category: 'Desayunos',
+    image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500&q=80',
     optionGroups: [
       {
         name: 'Ingrediente Principal',
@@ -118,6 +121,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Jamón, champiñón, pimiento o tocino',
     price: 95,
     category: 'Desayunos',
+    image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500&q=80',
     optionGroups: [
       {
         name: 'Ingrediente Principal',
@@ -149,6 +153,7 @@ export const menuItemsData: MenuItem[] = [
     description: '',
     price: 90,
     category: 'Desayunos',
+    image: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500&q=80',
     optionGroups: [
       {
         name: 'Estilo',
@@ -177,6 +182,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Asada de res, cerdo, adobada, pastor, mixto',
     price: 110,
     category: 'Antojitos',
+    image: 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
     optionGroups: [
       {
         name: 'Carne (Selecciona 1 o más para Mixto)',
@@ -198,6 +204,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Asada de res, cerdo, adobada, pastor o mixto',
     price: 90,
     category: 'Antojitos',
+    image: 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
     optionGroups: [
       {
         name: 'Estilo',
@@ -227,6 +234,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Asada de res, cerdo, adobada, pastor o mixto',
     price: 70,
     category: 'Antojitos',
+    image: 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
     optionGroups: [
       {
         name: 'Carne (Selecciona 1 o más para Mixto)',
@@ -248,6 +256,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Asada de res, cerdo, adobada, pastor o mixto',
     price: 80, // Chica
     category: 'Antojitos',
+    image: 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
     optionGroups: [
       {
         name: 'Tamaño',
@@ -277,6 +286,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Asada de res, cerdo, adobada, pastor',
     price: 70,
     category: 'Antojitos',
+    image: 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
     optionGroups: [
       {
         name: 'Carne',
@@ -297,6 +307,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Asada de res, asada de cerdo, adobada o pastor',
     price: 17,
     category: 'Antojitos',
+    image: 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
     optionGroups: [
       {
         name: 'Carne',
@@ -317,6 +328,7 @@ export const menuItemsData: MenuItem[] = [
     description: '',
     price: 70, // Jamón
     category: 'Antojitos',
+    image: 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
     optionGroups: [
       {
         name: 'Tipo de Especialidad',
@@ -346,6 +358,7 @@ export const menuItemsData: MenuItem[] = [
     description: '',
     price: 35, // Sencilla
     category: 'Antojitos',
+    image: 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
     optionGroups: [
       {
         name: 'Ingrediente Principal',
@@ -386,6 +399,7 @@ export const menuItemsData: MenuItem[] = [
     description: '',
     price: 85,
     category: 'Comidas',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
     optionGroups: [
       {
         name: 'Tamaño/Variante',
@@ -406,6 +420,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Arrachera o diezmillo. Opción Especial disponible.',
     price: 180,
     category: 'Comidas',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
     optionGroups: [
       {
         name: 'Corte / Especialidad',
@@ -425,6 +440,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'A la plancha, a las finas hierbas o empanizada',
     price: 180,
     category: 'Comidas',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
     optionGroups: [
       {
         name: 'Preparación',
@@ -444,6 +460,7 @@ export const menuItemsData: MenuItem[] = [
     description: '',
     price: 100, // clasica o pollo
     category: 'Comidas',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
     optionGroups: [
       {
         name: 'Tipo',
@@ -464,6 +481,7 @@ export const menuItemsData: MenuItem[] = [
     description: '',
     price: 50, // Sencilla
     category: 'Comidas',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
     optionGroups: [
       {
         name: 'Tipo de Torta',
@@ -497,6 +515,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Pollo, papa o lomo',
     price: 70,
     category: 'Comidas',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
     optionGroups: [
       {
         name: 'Relleno',
@@ -516,6 +535,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Pollo, lomo o picadillo',
     price: 20,
     category: 'Antojitos',
+    image: 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
     optionGroups: [
       {
         name: 'Tipo',
@@ -543,6 +563,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Lomo, pollo, asada de res, cerdo, adobada, jamón o queso',
     price: 35,
     category: 'Antojitos',
+    image: 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
     optionGroups: [
       {
         name: 'Relleno',
@@ -566,6 +587,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Lomo, pollo, cueritos o pata',
     price: 30, // Base Lomo
     category: 'Antojitos',
+    image: 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
     optionGroups: [
       {
         name: 'Tipo',
@@ -586,6 +608,7 @@ export const menuItemsData: MenuItem[] = [
     description: '',
     price: 20, // sencilla chica
     category: 'Comidas',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
     optionGroups: [
       {
         name: 'Tamaño y Estilo',
@@ -606,6 +629,7 @@ export const menuItemsData: MenuItem[] = [
     description: '(Sujeto a disponibilidad)',
     price: 85,
     category: 'Comidas',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
     optionGroups: [
       {
         name: 'Combo',
@@ -626,6 +650,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Incluye plátano, manzana, melón, fresa y yogurth',
     price: 50,
     category: 'Postres',
+    image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=500&q=80',
     optionGroups: [
       {
         name: 'Exclusiones (Quitar ingredientes)',
@@ -647,6 +672,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Incluye platano, fresa y lechera',
     price: 70,
     category: 'Postres',
+    image: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=500&q=80',
     optionGroups: [
       {
         name: 'Exclusiones (Quitar ingredientes)',
@@ -668,6 +694,7 @@ export const menuItemsData: MenuItem[] = [
     description: '',
     price: 100,
     category: 'Comidas',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
     optionGroups: []
   },
   {
@@ -676,6 +703,7 @@ export const menuItemsData: MenuItem[] = [
     description: '',
     price: 110,
     category: 'Comidas',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
     optionGroups: []
   },
   {
@@ -684,6 +712,7 @@ export const menuItemsData: MenuItem[] = [
     description: '',
     price: 70,
     category: 'Antojitos',
+    image: 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
     optionGroups: []
   },
   {
@@ -692,6 +721,7 @@ export const menuItemsData: MenuItem[] = [
     description: 'Incluye papas a la francesa',
     price: 70,
     category: 'Comidas',
+    image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
     optionGroups: []
   },
   {
@@ -700,6 +730,7 @@ export const menuItemsData: MenuItem[] = [
     description: '',
     price: 60,
     category: 'Antojitos',
+    image: 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
     optionGroups: []
   }
 ];

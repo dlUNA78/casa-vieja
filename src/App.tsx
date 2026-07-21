@@ -6,6 +6,7 @@ import {
   INITIAL_TRANSACTIONS 
 } from './data';
 
+import ComandasView from './components/ComandasView';
 import TableManagement from './components/TableManagement';
 import MenuCatalog from './components/MenuCatalog';
 import OrderSidebar from './components/OrderSidebar';
@@ -28,30 +29,38 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
+import Sidebar from './components/Sidebar';
+import CashoutFlow from './components/CashoutFlow';
+
 export default function App() {
   // Global State
   const [menuItems, setMenuItems] = useState<MenuItem[]>(() => {
-    const saved = localStorage.getItem('cv_pos_menu');
+    const saved = null; // localStorage.getItem('cv_pos_menu');
     return saved ? JSON.parse(saved) : INITIAL_MENU_ITEMS;
   });
 
   const [tables, setTables] = useState<Table[]>(() => {
-    const saved = localStorage.getItem('cv_pos_tables');
+    const saved = null; // localStorage.getItem('cv_pos_tables');
     return saved ? JSON.parse(saved) : INITIAL_TABLES;
   });
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem('cv_pos_transactions');
+    const saved = null; // localStorage.getItem('cv_pos_transactions');
     return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
   });
 
   const [takeoutOrders, setTakeoutOrders] = useState<TakeoutOrder[]>(() => {
-    const saved = localStorage.getItem('cv_pos_takeout_orders');
+    const saved = null; // localStorage.getItem('cv_pos_takeout_orders');
     return saved ? JSON.parse(saved) : [];
   });
 
-  const [activeTab, setActiveTab] = useState<'Mesas' | 'Menú' | 'Historial' | 'Cartera' | 'Ajustes'>('Mesas');
-  const [selectedTableId, setSelectedTableId] = useState<string | null>('table_12'); // defaults to Mesa 12 per screenshots
+  const [activeTab, setActiveTab] = useState<string>('Mesas');
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  
+  const toggleMenu = (menu: string) => {
+    setOpenMenu(prev => prev === menu ? null : menu);
+  };
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null); // defaults to Mesa 12 per screenshots
   const [isTakeout, setIsTakeout] = useState(false);
   const [selectedTakeoutOrderId, setSelectedTakeoutOrderId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,9 +105,9 @@ export default function App() {
     handleAddToOrder(extraItem, quantity, notes);
   };
 
-  const changeTab = (tab: 'Mesas' | 'Menú' | 'Historial' | 'Cartera' | 'Ajustes') => {
+  const changeTab = (tab: string) => {
     // Check if we are leaving the 'Menú' tab and we have a selected table
-    if (activeTab === 'Menú' && tab !== 'Menú') {
+    if (activeTab === 'PuntoDeVenta' && tab !== 'PuntoDeVenta') {
       if (selectedTableId && !isTakeout) {
         const currentTable = tables.find(t => t.id === selectedTableId);
         if (currentTable && currentTable.currentOrder.length === 0) {
@@ -120,7 +129,7 @@ export default function App() {
     setSelectedTableId(table.id);
     setIsTakeout(false);
     setSelectedTakeoutOrderId(null);
-    changeTab('Menú');
+    changeTab('PuntoDeVenta');
     setMobileMenuOpen(false);
   };
 
@@ -128,7 +137,7 @@ export default function App() {
     setSelectedTakeoutOrderId(orderId);
     setIsTakeout(true);
     setSelectedTableId(null);
-    changeTab('Menú');
+    changeTab('PuntoDeVenta');
     setMobileMenuOpen(false);
   };
 
@@ -174,7 +183,7 @@ export default function App() {
     setIsTakeout(true);
     setSelectedTakeoutOrderId(newTakeout.id);
     setSelectedTableId(null);
-    changeTab('Menú');
+    changeTab('PuntoDeVenta');
   };
 
   const handleAssignTable = (tableId: string, waiter: string) => {
@@ -193,7 +202,7 @@ export default function App() {
     setSelectedTableId(tableId);
     setIsTakeout(false);
     setSelectedTakeoutOrderId(null);
-    changeTab('Menú');
+    changeTab('PuntoDeVenta');
   };
 
   // Add Item to Order
@@ -531,7 +540,7 @@ export default function App() {
     addNotification(`Venta completada por $${total.toFixed(2)}. Folio ${folioStr}`);
     
     // Automatically switch to Cartera/Reports view so the user can verify immediately
-    changeTab('Cartera');
+    changeTab('CajaActual');
   };
 
   // Support / Settings additions
@@ -585,106 +594,26 @@ export default function App() {
     <div className="h-screen w-screen overflow-hidden flex bg-parchment text-[#1b1c15] font-sans">
       
       {/* SideNavBar matching image 5 style perfectly */}
-      <nav className="fixed left-0 top-0 h-full z-50 flex flex-col items-center py-6 bg-surface-dim w-24 hidden md:flex shrink-0">
-        <div className="mb-8 flex flex-col items-center">
-          <div className="w-10 h-10 rounded-lg bg-primary-container text-white flex items-center justify-center shadow-sm">
-            <span className="material-symbols-outlined text-2xl">restaurant</span>
-          </div>
-        </div>
-        
-        <ul className="flex flex-col w-full gap-2 items-center flex-1">
-          {/* Mesas Tab */}
-          <li className="w-full flex justify-center">
-            <button 
-              onClick={() => { changeTab('Mesas'); setIsTakeout(false); }}
-              className={`flex flex-col items-center justify-center w-full py-3 transition-all cursor-pointer ${
-                activeTab === 'Mesas' 
-                  ? 'text-primary font-bold' 
-                  : 'text-on-surface-variant hover:text-primary'
-              }`}
-            >
-              <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: activeTab === 'Mesas' ? "'FILL' 1" : "'FILL' 0" }}>
-                table_restaurant
-              </span>
-              <span className="text-[11px] font-sans font-semibold">Mesas</span>
-            </button>
-          </li>
-
-          {/* Menú Tab */}
-          <li className="w-full flex justify-center">
-            <button 
-              onClick={() => { setSelectedTableId(null); setSelectedTakeoutOrderId(null); changeTab('Menú'); }}
-              className={`flex flex-col items-center justify-center w-full py-3 transition-all cursor-pointer ${
-                activeTab === 'Menú' 
-                  ? 'text-primary font-bold' 
-                  : 'text-on-surface-variant hover:text-primary'
-              }`}
-            >
-              <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: activeTab === 'Menú' ? "'FILL' 1" : "'FILL' 0" }}>
-                restaurant_menu
-              </span>
-              <span className="text-[11px] font-sans font-semibold">Menú</span>
-            </button>
-          </li>
-
-          {/* Historial Tab */}
-          <li className="w-full flex justify-center">
-            <button 
-              onClick={() => changeTab('Historial')}
-              className={`flex flex-col items-center justify-center w-full py-3 transition-all cursor-pointer ${
-                activeTab === 'Historial' 
-                  ? 'text-primary font-bold' 
-                  : 'text-on-surface-variant hover:text-primary'
-              }`}
-            >
-              <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: activeTab === 'Historial' ? "'FILL' 1" : "'FILL' 0" }}>
-                history
-              </span>
-              <span className="text-[11px] font-sans font-semibold text-center leading-tight">Historial</span>
-            </button>
-          </li>
-
-          {/* Cartera (Corte de caja) Tab */}
-          <li className="w-full flex justify-center">
-            <button 
-              onClick={() => changeTab('Cartera')}
-              className={`flex flex-col items-center justify-center w-full py-3 transition-all cursor-pointer ${
-                activeTab === 'Cartera' 
-                  ? 'text-primary font-bold' 
-                  : 'text-on-surface-variant hover:text-primary'
-              }`}
-            >
-              <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: activeTab === 'Cartera' ? "'FILL' 1" : "'FILL' 0" }}>
-                account_balance_wallet
-              </span>
-              <span className="text-[11px] font-sans font-semibold text-center leading-tight">Cierre de<br/>caja</span>
-            </button>
-          </li>
-        </ul>
-
-        {/* Ajustes Tab */}
-        <div className="mt-auto mb-4 w-full flex justify-center">
-          <button 
-            onClick={() => changeTab('Ajustes')}
-            className={`flex flex-col items-center justify-center w-full py-3 transition-all cursor-pointer ${
-              activeTab === 'Ajustes' 
-                ? 'text-primary font-bold' 
-                : 'text-on-surface-variant hover:text-primary'
-            }`}
-          >
-            <span className="material-symbols-outlined mb-1" style={{ fontVariationSettings: activeTab === 'Ajustes' ? "'FILL' 1" : "'FILL' 0" }}>
-              settings
-            </span>
-            <span className="text-[11px] font-sans font-semibold">Ajustes</span>
-          </button>
-        </div>
-      </nav>
+      <Sidebar 
+        activeTab={activeTab} 
+        onChangeTab={(tab) => {
+          if (tab === 'PuntoDeVenta') {
+            setSelectedTableId(null);
+            setSelectedTakeoutOrderId(null);
+          } else if (tab === 'Mesas') {
+            setIsTakeout(false);
+          }
+          changeTab(tab);
+        }} 
+        openMenu={openMenu} 
+        onToggleMenu={toggleMenu} 
+      />
 
       {/* Main Content Wrapper */}
-      <div className="flex-1 flex flex-col md:pl-24 h-full relative overflow-hidden">
+      <div className="flex-1 flex flex-col md:pl-64 h-full relative overflow-hidden">
         
         {/* TopNavBar matching image layout perfectly */}
-        <header className="fixed top-0 right-0 left-0 md:left-24 h-16 z-40 flex justify-between items-center px-6 bg-surface-dim text-primary">
+        <header className="fixed top-0 right-0 left-0 md:left-64 h-16 z-40 flex justify-between items-center px-6 bg-surface-dim text-primary">
           
           <div className="flex items-center gap-3">
             {/* Hamburger menu for mobile only */}
@@ -775,79 +704,27 @@ export default function App() {
                 exit={{ x: -280 }}
                 className="relative flex flex-col w-64 max-w-xs bg-[#fdfcf0] h-full p-5 border-r border-stone-border space-y-6"
               >
-                <div className="flex items-center justify-between border-b border-stone-border/60 pb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-primary-container text-white flex items-center justify-center shadow-sm">
-                      <span className="material-symbols-outlined">restaurant</span>
-                    </div>
-                    <span className="font-serif font-bold text-primary text-md">Casa Vieja POS</span>
-                  </div>
+                <div className="absolute top-4 right-4 z-50">
                   <button onClick={() => setMobileMenuOpen(false)} className="p-1 rounded-lg text-on-surface-variant hover:bg-stone-card">
                     <X className="w-5 h-5" />
                   </button>
                 </div>
-
-                <ul className="space-y-2 flex-grow">
-                  <li>
-                    <button
-                      onClick={() => { changeTab('Mesas'); setIsTakeout(false); setMobileMenuOpen(false); }}
-                      className={`w-full p-3.5 rounded-xl text-left text-sm font-semibold font-sans flex items-center gap-3 transition-colors ${
-                        activeTab === 'Mesas' ? 'bg-primary-fixed text-primary' : 'text-on-surface-variant hover:bg-stone-card'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-md">table_restaurant</span>
-                      <span>Gestión de Mesas</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => { setSelectedTableId(null); setSelectedTakeoutOrderId(null); changeTab('Menú'); setMobileMenuOpen(false); }}
-                      className={`w-full p-3.5 rounded-xl text-left text-sm font-semibold font-sans flex items-center gap-3 transition-colors ${
-                        activeTab === 'Menú' ? 'bg-primary-fixed text-primary' : 'text-on-surface-variant hover:bg-stone-card'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-md">restaurant_menu</span>
-                      <span>Tomar Orden / Menú</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => { changeTab('Historial'); setMobileMenuOpen(false); }}
-                      className={`w-full p-3.5 rounded-xl text-left text-sm font-semibold font-sans flex items-center gap-3 transition-colors ${
-                        activeTab === 'Historial' ? 'bg-primary-fixed text-primary' : 'text-on-surface-variant hover:bg-stone-card'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-md">history</span>
-                      <span>Historial del Día</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => { changeTab('Cartera'); setMobileMenuOpen(false); }}
-                      className={`w-full p-3.5 rounded-xl text-left text-sm font-bold font-sans flex items-center gap-3 transition-colors ${
-                        activeTab === 'Cartera' ? 'bg-primary-fixed text-primary' : 'text-on-surface-variant hover:bg-stone-card'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-md">account_balance_wallet</span>
-                      <span>Cierre de caja</span>
-                    </button>
-                  </li>
-                  <li>
-                    <button
-                      onClick={() => { changeTab('Ajustes'); setMobileMenuOpen(false); }}
-                      className={`w-full p-3.5 rounded-xl text-left text-sm font-semibold font-sans flex items-center gap-3 transition-colors ${
-                        activeTab === 'Ajustes' ? 'bg-primary-fixed text-primary' : 'text-on-surface-variant hover:bg-stone-card'
-                      }`}
-                    >
-                      <span className="material-symbols-outlined text-md">settings</span>
-                      <span>Configuraciones</span>
-                    </button>
-                  </li>
-                </ul>
-
-                <div className="border-t border-stone-border/60 pt-4 text-center">
-                  <p className="text-[10px] text-on-surface-variant/70 font-sans">© 2024 Casa Vieja - POS v1.2</p>
-                </div>
+                <Sidebar 
+                  activeTab={activeTab} 
+                  onChangeTab={(tab) => { 
+                    if (tab === 'PuntoDeVenta') {
+                      setSelectedTableId(null);
+                      setSelectedTakeoutOrderId(null);
+                    } else if (tab === 'Mesas') {
+                      setIsTakeout(false);
+                    }
+                    changeTab(tab); 
+                    setMobileMenuOpen(false); 
+                  }} 
+                  openMenu={openMenu} 
+                  onToggleMenu={toggleMenu} 
+                  isMobile={true} 
+                />
               </motion.div>
             </div>
           )}
@@ -858,7 +735,7 @@ export default function App() {
           
           {/* Active Router Tab workspace panel */}
           <div className="flex-1 flex flex-col overflow-y-auto scrollbar-hide relative min-w-0">
-            {activeTab === 'Mesas' && (
+            {(activeTab === 'Mesas' || activeTab === 'Inicio') && (
               <TableManagement 
                 tables={tables}
                 takeoutOrders={takeoutOrders}
@@ -871,8 +748,45 @@ export default function App() {
                 onAssignTable={handleAssignTable}
               />
             )}
+            {activeTab === 'Comandas' && (
+              <ComandasView 
+                tables={tables}
+                takeoutOrders={takeoutOrders}
+                onCancelOrder={(id, isTakeout) => {
+                  if (isTakeout) {
+                    handleFreeTakeout(id);
+                  } else {
+                    handleFreeTable(id);
+                  }
+                  addNotification('Orden anulada en cocina.');
+                }}
+                onCancelItem={(orderId, isTakeout, itemIndex) => {
+                  if (isTakeout) {
+                    setTakeoutOrders(prev => prev.map(t => {
+                      if (t.id === orderId) {
+                        const newOrder = [...t.currentOrder];
+                        newOrder.splice(itemIndex, 1);
+                        return { ...t, currentOrder: newOrder };
+                      }
+                      return t;
+                    }));
+                  } else {
+                    setTables(prev => prev.map(t => {
+                      if (t.id === orderId) {
+                        const newOrder = [...t.currentOrder];
+                        newOrder.splice(itemIndex, 1);
+                        return { ...t, currentOrder: newOrder };
+                      }
+                      return t;
+                    }));
+                  }
+                  addNotification('Platillo anulado en cocina.');
+                }}
+              />
+            )}
 
-            {activeTab === 'Menú' && (
+
+            {activeTab === 'PuntoDeVenta' && (
               <div className="flex flex-col flex-1 h-full min-h-0">
                 {(selectedTableId || selectedTakeoutOrderId) && (
                   <div className="px-6 md:px-8 pt-6 pb-0 shrink-0">
@@ -893,21 +807,33 @@ export default function App() {
               </div>
             )}
 
-            {activeTab === 'Cartera' && (
+            {activeTab === 'CajaActual' && (
               <FinancialSummary 
                 transactions={transactions}
                 onPrintShiftClosure={() => addNotification('Reporte del Cierre de caja impreso con éxito.')}
               />
             )}
+            
+            {activeTab === 'CorteCaja' && (
+              <CashoutFlow 
+                expectedCash={transactions.filter(t => t.method === 'Efectivo').reduce((sum, t) => sum + t.total, 0)}
+                transactions={transactions}
+                onConfirmPrint={(declared) => {
+                  addNotification(`Cierre de caja completado. Total declarado: ${declared.toFixed(2)}.`);
+                  setTransactions([]);
+                  changeTab('CajaActual');
+                }}
+              />
+            )}
 
-            {activeTab === 'Historial' && (
+            {(activeTab === 'HistorialCortes' || activeTab === 'HistorialVentas') && (
               <HistoryLog 
                 transactions={transactions}
                 onVoidTransaction={handleVoidTransaction}
               />
             )}
 
-            {activeTab === 'Ajustes' && (
+            {(activeTab === 'EditarMenu' || activeTab === 'Disponibilidad' || activeTab === 'Usuarios') && (
               <SettingsPanel 
                 menuItems={menuItems}
                 onAddMenuItem={handleAddMenuItem}
@@ -921,7 +847,7 @@ export default function App() {
           </div>
 
           {/* Persistent Active Ticket Bill sidebar inside POS screen */}
-          {activeTab === 'Menú' && (activeTable || (isTakeout && activeTakeout)) && (
+          {activeTab === 'PuntoDeVenta' && (activeTable || (isTakeout && activeTakeout)) && (
             <OrderSidebar 
               activeTable={activeTable}
               isTakeout={isTakeout}

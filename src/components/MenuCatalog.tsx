@@ -154,7 +154,18 @@ export default function MenuCatalog({
       <div className="flex-1 overflow-y-auto scrollbar-hide pb-24">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
           {filteredItems.map(item => {
-            const hasImg = !!item.image;
+            
+            const defaultImages: Record<string, string> = {
+              'Desayunos': 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500&q=80',
+              'Comidas': 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&q=80',
+              'Antojitos': 'https://images.unsplash.com/photo-1564987588329-3af7b884d521?w=500&q=80',
+              'Postres': 'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=500&q=80',
+              'Bebidas': 'https://images.unsplash.com/photo-1544145945-f90425340c7e?w=500&q=80',
+              'Especiales': 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=500&q=80'
+            };
+            const itemImage = item.image || defaultImages[item.category] || defaultImages['Comidas'];
+            const hasImg = true;
+
             
             return (
               <motion.div
@@ -167,7 +178,7 @@ export default function MenuCatalog({
                 {hasImg ? (
                   <div className="h-40 w-full bg-surface-container-highest relative overflow-hidden">
                     <img 
-                      src={item.image} 
+                      src={itemImage} 
                       alt={item.name} 
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       referrerPolicy="no-referrer"
